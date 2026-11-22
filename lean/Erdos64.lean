@@ -828,7 +828,7 @@ theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
       s(a, b) ∈ {e | e ∈ c.edges} → s(a', b') ∈ {e | e ∈ c.edges} →
       G.Adj a w → G.Adj b w → G.Adj a' w → G.Adj b' w → s(a, b) = s(a', b') := by
     intro w hw a b a' b' hab hab' haw hbw ha'w hb'w
-    simp only [Set.mem_setOf_eq] at hw hab hab'
+    simp only [Set.mem_ofPred_eq] at hw hab hab'
     have ha' : a' ∈ c.support := Walk.fst_mem_support_of_mem_edges c hab'
     have hb' : b' ∈ c.support := Walk.snd_mem_support_of_mem_edges c hab'
     have hne' : a' ≠ b' := (c.adj_of_mem_edges hab').1.ne
@@ -839,9 +839,9 @@ theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
         · rfl
         · exact Sym2.eq_swap
         · exact absurd rfl hne'
-      · push_neg at h2
+      · push Not at h2
         exact (hkey w hw a b b' hab haw hbw hb' (hΔ2 a' b' w hab' ha'w hb'w) h2.1 h2.2).elim
-    · push_neg at h1
+    · push Not at h1
       exact (hkey w hw a b a' hab haw hbw ha' (hΔ1 a' b' w hab' ha'w hb'w) h1.1 h1.2).elim
   -- o caminho `P` = ciclo sem a primeira aresta, em `G`
   have hnil : ¬ cG.Nil := hcG.not_nil
@@ -865,7 +865,7 @@ theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
     obtain ⟨_, w, haw, hbw⟩ := c.adj_of_mem_edges hab
     refine ⟨w, ?_, haw, hbw⟩
     intro hw
-    simp only [Set.mem_setOf_eq] at hw
+    simp only [Set.mem_ofPred_eq] at hw
     have ha : a ∈ c.support := Walk.fst_mem_support_of_mem_edges c hab
     have hb : b ∈ c.support := Walk.snd_mem_support_of_mem_edges c hab
     have hwa : s(w, a) ∈ c.edges := by
@@ -896,7 +896,7 @@ theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
     have hadj : G.Adj x cG.snd := cG.adj_snd hnil
     refine hfree ⟨x, Walk.cons hadj Q, m + 1, by omega, ?_, ?_⟩
     · rw [Walk.isCycle_iff_isPath_tail_and_le_length]
-      simp only [Walk.tail_cons, Walk.isPath_copy, Walk.length_cons]
+      simp only [Walk.tail_cons, Walk.length_cons]
       exact ⟨by simpa using hQ, by omega⟩
     · simp only [Walk.length_cons]
       omega
