@@ -9,7 +9,7 @@ na tabela da Seção 3 e na Seção 5).
 rigorosamente as regras de compatibilidade da **Seção 5** (nunca chute nomes de lemas; prefira `simp`, `simpa`,
 `omega`, `aesop` ou `grind`).
 > 4. Respeite os **Becos Sem Saída** da **Seção 4** para não repetir caminhos descartados.
-> 5. Escolha **autonomamente** o ataque e execute diretamente a **Próxima Rodada** definida na **Seção 6** (neste checkpoint: **Rodada 11**), abrindo sua resposta com o indicador `**Progresso: X% / 100%**`.
+> 5. Escolha **autonomamente** o ataque e execute diretamente a **Próxima Rodada** definida na **Seção 6** (neste checkpoint: **Rodada 12**), abrindo sua resposta com o indicador `**Progresso: X% / 100%**`.
 > 6. Sempre que gerar um novo checkpoint, atualize **simultaneamente** `README.md` e `Erdos64_lean.md` (envelope para
 `lean/Erdos64.lean` — Regra do Par Sincronizado).
 
@@ -17,12 +17,12 @@ rigorosamente as regras de compatibilidade da **Seção 5** (nunca chute nomes d
 
 # Projeto Erdős #64 — Conjectura de Erdős–Gyárfás
 
-> **Arquivo Mestre de Estado, Memória e Continuidade (`Checkpoint v1.5`)**  
-> **Última atualização:** 22 de novembro de 2026 (Pós-Rodada 10 — Recobrimento hexagonal e fronteiras em superfícies)  
+> **Arquivo Mestre de Estado, Memória e Continuidade (`Checkpoint v1.6`)**  
+> **Última atualização:** 22 de novembro de 2026 (Pós-Rodada 11 — Cacto de Triângulos e colagem com uma ou duas junções)  
 > **Progresso Atual:** `25% / 100%`  
 > **Alvo Oficial:** [Problema #64 de Erdős](https://erdosproblems.com/64) (Prêmio de \$1.000 — Teoria dos Grafos / Ciclos)  
 > **Arquivo Lean Sincronizado:** `lean/Erdos64.lean` (também no envelope `Erdos64_lean.md`)  
-> **Contagem Formal (`lean/Erdos64.lean`):** **19 teoremas públicos `VERIFIED`** | **8 declarações com `sorry`** | **0 erros e 0 avisos de linter** em Lean `v4.36.0` + Mathlib `v4.36.0`.
+> **Contagem Formal (`lean/Erdos64.lean`):** **21 teoremas públicos `VERIFIED`** | **7 declarações com `sorry`** | **0 erros e 0 avisos de linter** em Lean `v4.36.0` + Mathlib `v4.36.0`.
 
 ---
 
@@ -33,7 +33,7 @@ rigorosamente as regras de compatibilidade da **Seção 5** (nunca chute nomes d
 compilador Lean 4 apontar um erro ou durante a eliminação de seus `sorry` em `lean/Erdos64.lean`.
    - Leia a **Seção 4** (Becos Sem Saída) e a **Seção 5** (Regras Lean `v4.36.0`) antes de propor qualquer ataque ou
 código novo.
-   - Retome sempre pela **Próxima Rodada** da **Seção 6** (neste checkpoint: **Rodada 11**).
+   - Retome sempre pela **Próxima Rodada** da **Seção 6** (neste checkpoint: **Rodada 12**).
 
 2. **Divisão de Papéis:**
    - **IA (Estrategista e Demonstradora):** Decide **autonomamente** qual frente atacar em cada rodada, conduz as
@@ -90,7 +90,7 @@ Guillaume Ducoffe & Bogdan Dumitru (`arXiv:2609.28594`, jul–set/2026: 2-conexo
 
 ---
 
-## 3. Inventário de Resultados Provados (Rodadas 1 a 10)
+## 3. Inventário de Resultados Provados (Rodadas 1 a 11)
 
 ### Convenções Fixas
 * Um grafo $G$ é **livre de $C_{2^k}$** se não contém ciclo simples de comprimento $2^k$ com $k \ge 2$.
@@ -113,7 +113,7 @@ com **menor $|V(G)|$** possível e, no empate, **menor $|E(G)|$** possível.
 | **Lema 4** | $H=V_{\ge 4}$ é independente | 1 | `high_degree_independent` | `VERIFIED` |
 | **Lema 5** | Contraexemplo mínimo não possui pontes | 2, 9 | `minimal_bridgeless` | `VERIFIED` |
 | **Lema 6** | Dicotomia do vértice de corte e redução ao Bloco Pinçado $\mathcal{K}$ | 2 | `pinched_block_equiv` | `PLANNED` |
-| **Teorema 7** | Cacto de Triângulos ($G_\Delta$ sem ciclos de comprimento $\ge 4$) | 3 | `triangle_cactus_no_long_cycle` | `SORRY` |
+| **Teorema 7** | Cacto de Triângulos ($G_\Delta$ sem ciclos de comprimento $\ge 4$) | 3, 11 | `triangle_cactus_no_long_cycle` | `VERIFIED` |
 | **Teoremas 8–9** | Fronteira das componentes de $G[L]$, $L_3=\emptyset$, $\lvert E(G[L_2])\rvert\le\lvert H_4\rvert$ | 4 | `no_L3_vertices` | `VERIFIED` para $L_3=\emptyset$ |
 | **Teorema 10** | Pisos de cubicidade $\lvert V_3\rvert\ge \frac{8}{11}n$ (sem $K_3$) e $\lvert V_3\rvert\ge \frac{20}{27}n$ (bipartido) | 4 | `minimal_triangle_free_cubicity`, `minimal_bipartite_cubicity` | `SORRY` |
 | **Teorema 11** | Autorredução de $K_3$-fatores em cúbicos ($H_3$ cúbico simples) | 5 | `minimal_no_K3_factor` | `SORRY` |
@@ -126,6 +126,7 @@ com **menor $|V(G)|$** possível e, no empate, **menor $|E(G)|$** possível.
 | **Teorema 18** | Desigualdade exata do fulereno ($C_{60}$). Para cintura $\ge 5$ sem $C_8$, $30\chi\le 9n_3-8n$. No plano, $n\ge 60$ e $n_3\ge(8n+60)/9$ | 8 | `fullerene_euler_inequality`, `planar_girth5_no_C8_card_ge_60` | `VERIFIED` para o núcleo algébrico |
 | **Teorema 19** | Em um lado bipartido de ordem no máximo igual à do outro lado de um corte cúbico de três arestas, quaisquer dois pares de terminais admitem caminhos cujos comprimentos satisfazem $p+q+2=2^m$; ao menos um evita o terceiro terminal de sua cópia | 9 | `bipartite_three_terminals_same_color`, `even_closed_walk_same_color_edges`, `two_join_edges_dyadic_residues` | `VERIFIED` para os três lemas auxiliares. Colagem completa demonstrada em texto. |
 | **Teorema 20** | Fronteira de fragmento bipartido em superfície: $b\ge 3\chi+s$ | 10 | `euler_boundary_deficit_bound` | `VERIFIED` para o núcleo algébrico |
+| **Teorema 21** | Colagem de um lado cúbico com uma ou duas junções, incluindo o caso não bipartido | 11 | `single_join_edge_dyadic_residues` | `VERIFIED` para o critério aritmético de uma junção |
 
 *Status Lean.* `VERIFIED` indica uma prova compilada sem dependência de `sorry`. `READY_TO_COMPILE` indica prova escrita aguardando compilação. `SORRY` indica enunciado tipado com prova pendente. `PLANNED` indica transcrição pendente.
 
@@ -451,6 +452,109 @@ contagem permite um lado bipartido.
 numérica a partir das três contagens. A interpretação de faces e a
 aplicação a cortes acima são demonstradas em texto.
 
+
+### 3.5. Rodada 11: Cacto de Triângulos e a colagem de um lado não bipartido
+
+#### Teorema 7: Prova pelo menor ciclo longo
+
+Suponha que $G$ seja livre de ciclos de comprimento $2^k$, para $k\ge 2$.
+Escreva $H=G_\Delta$ para o subgrafo das arestas que pertencem a triângulos.
+Se $H$ contém um ciclo de comprimento pelo menos quatro, escolha um de
+comprimento mínimo $n$. Como $G$ é livre de $C_4$, temos $n\ge 5$.
+
+1. **Cordas.** Uma aresta de $H$ entre dois vértices não consecutivos do
+   ciclo o divide em arcos de comprimentos $p,q\ge 2$ com $p+q=n$.
+   Ao menos um arco tem comprimento pelo menos três. Juntá-lo à aresta
+   forma um ciclo em $H$ de comprimento entre quatro e $n-1$.
+   Assim toda aresta de $H$ entre vértices do ciclo é consecutiva nele.
+2. **Vértices externos.** Se um vértice externo $z$ tem dois vizinhos
+   não consecutivos no ciclo em $H$, tome o menor arco entre esses
+   vizinhos. Seu comprimento $p$ satisfaz $2\le p\le\lfloor n/2\rfloor$.
+   O arco, junto com as duas arestas incidentes a $z$, dá em $H$
+   um ciclo de comprimento $p+2$ entre quatro e $n-1$.
+   Portanto quaisquer dois vizinhos de $z$ no ciclo são consecutivos.
+   Um ciclo simples de comprimento maior que três não pode conter
+   as três arestas de um triângulo entre as próprias arestas. Logo
+   $z$ tem no máximo dois vizinhos no ciclo em $H$.
+3. **Desvios.** Para cada aresta $uv$ do ciclo, escolha o terceiro
+   vértice $z$ de um triângulo que a contém. Tanto $uz$ quanto $vz$
+   pertencem a $H$. Se $z$ estivesse no ciclo, o item 1 forçaria
+   as três arestas do triângulo a serem consecutivas no ciclo,
+   o que é impossível. Dois lados distintos não podem escolher
+   o mesmo terceiro vértice, pois o item 2 então seria violado
+   por pelo menos três vizinhos no ciclo.
+4. **Comprimentos.** Mantenha uma aresta fixa e substitua qualquer
+   quantidade entre zero e $n-1$ das outras arestas pelo caminho
+   de dois passos de seu triângulo. Como os vértices inseridos são
+   externos e distintos, cada resultado é um ciclo simples em $G$.
+   São obtidos todos os comprimentos de $n$ até $2n-1$. A menor
+   potência de dois maior ou igual a $n$ pertence ao intervalo,
+   contradizendo a hipótese sobre $G$.
+
+#### Teorema 21: Comprimentos na colagem com uma ou duas junções
+
+Seja $G$ um contraexemplo mínimo global que é cúbico. Suponha que três
+arestas que formam um emparelhamento separem os lados $A$ e $B$,
+com $|A|\le |B|$. Tome duas cópias de $G[A]$. Em cada uma, escolha
+um dos três terminais como raiz. Identifique as duas raízes em $r$
+e conecte os dois terminais restantes de uma cópia aos da outra
+por qualquer bijeção. Chame essas duas novas arestas de junções.
+
+Para **cada** escolha de raízes e bijeção, pelo menos uma das situações
+abaixo ocorre, com $k\ge 2$.
+
+- **Uma junção.** Para uma das junções, cada cópia tem um caminho
+  simples entre seu extremo da junção e sua própria raiz. Os
+  comprimentos $p,q$ satisfazem $p+q+1=2^k$. Em particular, os
+  comprimentos têm paridades opostas e $p+q\equiv 3\pmod 4$.
+- **Duas junções.** Cada cópia tem um caminho simples entre seus
+  dois terminais não identificados. Ao menos um desses caminhos
+  evita sua raiz. Os comprimentos $p,q$ satisfazem $p+q+2=2^k$.
+
+**Demonstração.** O grafo auxiliar é simples, tem grau mínimo pelo
+menos três e tem $2|A|-1<|V(G)|$ vértices. Pela minimalidade global,
+contém um ciclo simples de comprimento $2^k$. Um ciclo sem junções
+fica dentro de uma cópia, pois as cópias têm apenas $r$ em comum.
+Isso daria um ciclo proibido em $G[A]$. O ciclo procurado usa uma
+ou duas junções.
+
+Ao percorrer o ciclo, cada junção troca de cópia. A passagem por
+$r$ pode trocar de cópia no máximo uma vez, pois o ciclo é simples.
+Unidades de troca têm de somar um número par numa volta fechada.
+Se há uma junção, o ciclo troca de cópia em $r$ também. Os dois
+trechos são caminhos até as respectivas raízes. Se há duas, o ciclo
+permanece na mesma cópia quando passa por $r$, caso passe. Assim cada
+trecho entre junções permanece em sua cópia e ao menos um deles evita
+a raiz. As somas seguem contando arestas. Reciprocamente, cada
+par de caminhos descrito forma um ciclo simples no grafo auxiliar.
+
+**Consequência para o núcleo 3-conexo.** Num grafo cúbico 3-conexo,
+cada lado não trivial de um corte de três arestas em emparelhamento
+é 2-conexo. De fato, para cada componente de um lado, suas arestas
+ao outro lado formam um corte que precisa ter pelo menos três
+arestas. Há apenas três, então o lado é conexo. Se um vértice $x$ do
+lado o separasse, cada componente de $G[A]-x$ teria de conter
+pelo menos dois terminais do corte. Se tivesse zero ou um, retirar
+$x$ e, quando houver um terminal, o extremo correspondente no
+lado oposto separaria essa componente do restante do grafo.
+Duas componentes já exigiriam quatro terminais.
+
+Em qualquer grafo 2-conexo não bipartido, todo par de vértices
+distintos é ligado por caminhos simples de ambas as paridades.
+Para ver isso, escolha um ciclo ímpar. Pelo teorema de Menger,
+o par pode ser ligado a dois vértices distintos do ciclo por
+caminhos disjuntos, que encontram o ciclo somente nos respectivos
+extremos. Permitem-se caminhos triviais para vértices já no ciclo.
+Os dois arcos entre esses pontos têm paridades opostas. Juntar
+cada arco aos dois caminhos dá a afirmação. Portanto, num lado
+não bipartido do corte, a paridade por si só deixa o caso de uma
+junção aberto. A obstrução exata exige comparar os comprimentos
+disponíveis e suas somas diádicas.
+
+**Formalização.** O critério aritmético de uma junção está em
+`single_join_edge_dyadic_residues`. A construção da colagem e a
+classificação de seus ciclos acima são demonstradas em texto.
+
 ---
 
 ## 4. Becos Sem Saída e Obstruções Mapeadas (Não Repetir)
@@ -471,6 +575,8 @@ para $[9, 13]$.
 
 8. **Lado bipartido planar de corte de três arestas em emparelhamento.** O Teorema 20 exige pelo menos $6$ arestas de fronteira em cada componente conexa de um lado bipartido com grau interno pelo menos $2$ e sem $C_4$.
 
+9. **Bloquear uma junção usando somente a paridade dos caminhos.** Num lado não bipartido de um corte cúbico 3-conexo que é um emparelhamento, cada par de terminais admite ambas as paridades. Examine as somas de comprimentos do Teorema 21.
+
 ---
 
 ## 5. Ambiente Lean 4 e Regras Obrigatórias (`v4.36.0`)
@@ -478,8 +584,9 @@ para $[9, 13]$.
 * **Toolchain:** Lean 4 `v4.36.0` e Mathlib `v4.36.0`. Compilação de `lean/Erdos64.lean` com `lake env lean` executada localmente no checkout dessa versão de Mathlib.
 * **v1.3:** O relatório anexado lista 0 erros e 10 avisos de `sorry`, confirmando os 11 teoremas sem `sorry` da versão. Ao recuperar o código do PDF, a indentação no cálculo de cardinalidade em `fullerene_euler_inequality` causou erros. O passo foi reescrito com `Finset.filter_insert`, preservando os enunciados do Teorema 18.
 * **v1.4:** O relatório informado confirma 0 erros e 9 declarações com `sorry`. `minimal_bridgeless` está entre os 16 teoremas públicos verificados.
-* **v1.5 — `VERIFIED` (19 teoremas públicos):** `HasPow2Cycle.map`, `HasPow2Cycle.mono`, `HasPow2Cycle.of_induce`, `no_two_common_neighbors`, `common_neighbors_le_one`, `triangles_edge_disjoint`, `minimal_connected`, `high_degree_independent`, `minimal_bridgeless`, `no_L3_vertices`, `hex_has_cycle16_of_no_close_collision`, `hex_local_injective_has_cycle_4_8_16`, `hex_covering_has_cycle_4_8_16`, `fullerene_euler_inequality`, `planar_girth5_no_C8_card_ge_60`, `bipartite_three_terminals_same_color`, `even_closed_walk_same_color_edges`, `two_join_edges_dyadic_residues`, `euler_boundary_deficit_bound`. A auditoria com `#print axioms` verifica ausência de `sorryAx` nesses enunciados. Os lemas privados de infraestrutura ficam fora da contagem.
-* **v1.5 — `SORRY` (8 declarações):** `triangle_cactus_no_long_cycle`, `minimal_triangle_free_cubicity`, `minimal_bipartite_cubicity`, `minimal_no_K3_factor`, `minimal_no_C5_factor`, `bipartite_not_3connected_halving`, `minimal_general_cubicity`, `minimal_no_K2_in_V3_cubicity`.
+* **v1.5:** 19 teoremas públicos verificados e 8 declarações com `sorry`. O núcleo combinatório do recobrimento hexagonal foi fechado nessa versão.
+* **v1.6 — `VERIFIED` (21 teoremas públicos):** `HasPow2Cycle.map`, `HasPow2Cycle.mono`, `HasPow2Cycle.of_induce`, `no_two_common_neighbors`, `common_neighbors_le_one`, `triangles_edge_disjoint`, `minimal_connected`, `high_degree_independent`, `minimal_bridgeless`, `triangle_cactus_no_long_cycle`, `no_L3_vertices`, `hex_has_cycle16_of_no_close_collision`, `hex_local_injective_has_cycle_4_8_16`, `hex_covering_has_cycle_4_8_16`, `fullerene_euler_inequality`, `planar_girth5_no_C8_card_ge_60`, `bipartite_three_terminals_same_color`, `even_closed_walk_same_color_edges`, `two_join_edges_dyadic_residues`, `euler_boundary_deficit_bound`, `single_join_edge_dyadic_residues`. Auditados com `#print axioms` e livres de dependência de `sorryAx`.
+* **v1.6 — `SORRY` (7 declarações):** `minimal_triangle_free_cubicity`, `minimal_bipartite_cubicity`, `minimal_no_K3_factor`, `minimal_no_C5_factor`, `bipartite_not_3connected_halving`, `minimal_general_cubicity`, `minimal_no_K2_in_V3_cubicity`.
 
 ### Regras de Compatibilidade Confirmadas para Lean `v4.36.0` / Mathlib `v4.36.0`
 1. **Não inventar nem chutar nomes de lemas** (em `v4.36.0`, convenções como `not_mem` viraram `notMem` camelCase;
@@ -497,16 +604,17 @@ vez de `<;>` quando houver apenas 1 submeta.
 
 ---
 
-## 6. Plano Imediato para a Rodada 11
+## 6. Plano Imediato para a Rodada 12
 
-1. **Núcleo cúbico 3-conexo:** nos cortes de três arestas ainda compatíveis com um lado bipartido, combinar as seis condições do Teorema 19, a restrição de desvio e as somas proibidas. Para fragmentos com caminhos ímpares, estudar separadamente os ciclos do grafo auxiliar que podem usar uma única aresta de junção.
-2. **Formalização Lean:** retomar a construção com duas cópias e duas arestas de junção do Teorema 19, reaproveitando a infraestrutura de `minimal_bridgeless`. Procurar uma formalização independente do Cacto de Triângulos que preserve os enunciados verificados.
-3. **Frente planar:** usar o balanço do Teorema 20 para identificar fragmentos não bipartidos que ainda podem ocorrer. Ao aplicar descarga ao Teorema 18, explicitar quando uma fronteira é um ciclo simples e quais contagens admitem passeios faciais com repetições.
+1. **Núcleo cúbico 3-conexo.** Para cada escolha de raízes e junções, comparar os espectros de caminhos do Teorema 21 com as somas proibidas no corte original. Procurar famílias em que os dois tipos de ciclo da colagem sejam simultaneamente bloqueados.
+2. **Formalização Lean.** Reutilizar os arcos de ciclos e o fechamento de caminhos simples da Rodada 11 na colagem do Teorema 21. Separar a preservação de grau da classificação de ciclos.
+3. **Frente planar.** Investigar se a ausência de ciclos longos no subgrafo triangular restringe as configurações de descarga com faces triangulares. Tratar explicitamente passeios faciais com repetições.
 
 ---
 
 ## 7. Changelog de Sessões
 
+* **v1.6 (22/11/2026 — Rodada 11):** Verificado o Teorema 7, o Cacto de Triângulos. Provado o Teorema 21 em texto, com o critério aritmético de uma junção verificado em Lean. Recompilação com 0 erros, 0 avisos de linter e 7 avisos de `sorry`. Progresso: `25% / 100%`.
 * **v1.5 (22/11/2026 — Rodada 10):** Fechado o raio de colisão $6$ em Lean. Verificada a versão localmente injetiva do núcleo do Teorema 17, sem restrição de finitude. Provado o Teorema 20 sobre a fronteira de fragmentos bipartidos e verificado seu núcleo algébrico. Recompilação com 0 erros, 0 avisos de linter e 8 avisos de `sorry`. Progresso: `25% / 100%`. A conjectura geral permanece aberta.
 * **v1.4 (22/11/2026 — Rodada 9):** Provado o Teorema 19 sobre as seis combinações de pares de terminais de um lado bipartido de corte cúbico. Formalizado `minimal_bridgeless` e verificados três lemas auxiliares do Teorema 19. Verificados os casos de raio de colisão $4$ e $\ge 8$ do Teorema 17. Recompilação completa com 0 erros, 0 avisos de linter e 9 avisos de `sorry`. Progresso: `24% / 100%`.
 * **v1.3 (22/11/2026 — Rodada 8 & Limpeza Lean `v4.36.0`):** Confirmados 9/9 blocos sem `sorry` com 0 erros; limpos os
