@@ -793,7 +793,7 @@ theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
   have hle := triangleSubgraph_le G
   let cG := c.mapLe hle
   have hcG : cG.IsCycle := (Walk.isCycle_mapLe hle).mpr hc
-  have hcGlen : cG.length = N := by simp [cG, Walk.length_mapLe, hlen]
+  have hcGlen : cG.length = N := by simp [cG, hlen]
   by_cases h4 : N = 4
   · exact hfree (hasPow2Cycle_of_cycle_four cG hcG (by omega))
   have h5 : 5 ≤ N := by omega
@@ -899,7 +899,7 @@ theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
     refine hfree ⟨x, Walk.cons hadj Q, m + 1, by omega, ?_, ?_⟩
     · rw [Walk.isCycle_iff_isPath_tail_and_le_length]
       simp only [Walk.tail_cons, Walk.isPath_copy, Walk.length_cons]
-      exact ⟨hQ, by omega⟩
+      exact ⟨by simpa using hQ, by omega⟩
     · simp only [Walk.length_cons]
       omega
 
