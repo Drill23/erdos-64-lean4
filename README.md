@@ -1,20 +1,22 @@
 > **INSTRUÇÃO AUTOMÁTICA DE RETOMADA PARA A IA (LEIA PRIMEIRO):**  
 > Se o usuário enviou este arquivo (ou link) em uma nova conversa — mesmo acompanhado apenas de um comando curto como *"segue"* ou *"continua"* — **assuma imediatamente a continuidade da pesquisa abaixo sem pedir confirmação**.  
-> 1. Considere todos os resultados da **Seção 3** como provados matematicamente (ver status de compilação formal em `lean/Erdos64.lean`).  
+> 1. Considere todos os resultados da **Seção 3** como provados matematicamente (ver status real de compilação formal na tabela da Seção 3 e na Seção 5).  
 > 2. Se o usuário colou logs/erros do compilador Lean 4, priorize corrigir e validar os teoremas em `lean/Erdos64.lean` antes ou em conjunto com a nova rodada teórica.  
-> 3. Respeite os **Becos Sem Saída** da **Seção 4** para não repetir caminhos descartados.  
-> 4. Escolha **autonomamente** o ataque e execute diretamente a **Próxima Rodada** definida na **Seção 6**, abrindo sua resposta com o indicador `**Progresso: X% / 100%**`.  
-> 5. Sempre que gerar um novo checkpoint, atualize **simultaneamente** `README.md` e `Erdos64_lean.md` (envelope para `lean/Erdos64.lean` — Regra do Par Sincronizado).
+> 3. **Ambiente Lean confirmado:** escreva **sempre** para **Lean 4 `v4.36.0` + Mathlib `v4.36.0`** respeitando rigorosamente as regras de compatibilidade da **Seção 5** (nunca chute nomes de lemas; prefira `simp`, `simpa`, `omega`, `aesop` ou `grind`).  
+> 4. Respeite os **Becos Sem Saída** da **Seção 4** para não repetir caminhos descartados.  
+> 5. Escolha **autonomamente** o ataque e execute diretamente a **Próxima Rodada** definida na **Seção 6**, abrindo sua resposta com o indicador `**Progresso: X% / 100%**`.  
+> 6. Sempre que gerar um novo checkpoint, atualize **simultaneamente** `README.md` e `Erdos64_lean.md` (envelope para `lean/Erdos64.lean` — Regra do Par Sincronizado).
 
 ---
 
 # Projeto Erdős #64 — Conjectura de Erdős–Gyárfás
 
-> **Arquivo Mestre de Estado, Memória e Continuidade (`Checkpoint v1.2`)**  
-> **Última atualização:** 21 de novembro de 2026 (Pós-Rodada 7)  
+> **Arquivo Mestre de Estado, Memória e Continuidade (`Checkpoint v1.2.1`)**  
+> **Última atualização:** 22 de novembro de 2026 (Calibração Lean `v4.36.0`, Pós-Rodada 7)  
 > **Progresso Atual:** `18% / 100%`  
 > **Alvo Oficial:** `https://erdosproblems.com/64` (Prêmio de \$1.000 — Teoria dos Grafos / Ciclos)  
-> **Arquivo Lean Sincronizado:** `lean/Erdos64.lean` (entregue via envelope `Erdos64_lean.md`)
+> **Arquivo Lean Sincronizado:** `lean/Erdos64.lean` (entregue via envelope `Erdos64_lean.md`)  
+> **Contagem Formal Honesta (`lean/Erdos64.lean`):** **5 teoremas `VERIFIED`** (compilados sem `sorry` em Lean `v4.36.0`) | **4 teoremas `READY_TO_COMPILE`** (corrigidos sem `sorry`, aguardando recompilação) | **9 declarações com `sorry`**
 
 ---
 
@@ -22,12 +24,12 @@
 
 1. **Retomada Imediata Sem Regressão:**
    - Todos os teoremas listados na **Seção 3** estão com demonstração matemática fechada; só revisite algum deles se o compilador Lean 4 apontar um erro ou durante a eliminação de seus `sorry` em `lean/Erdos64.lean`.
-   - Leia a **Seção 4** antes de propor qualquer ataque novo.
+   - Leia a **Seção 4** (Becos Sem Saída) e a **Seção 5** (Regras Lean `v4.36.0`) antes de propor qualquer ataque ou código novo.
    - Retome sempre pela **Próxima Rodada** da **Seção 6** (neste checkpoint: **Rodada 8**).
 
 2. **Divisão de Papéis:**
    - **IA (Estrategista e Demonstradora):** Decide **autonomamente** qual frente atacar em cada rodada, conduz as demonstrações com rigor completo, decide o momento de emitir novos checkpoints e mantém o código Lean 4 atualizado. Não pergunte ao usuário qual subproblema escolher.
-   - **Usuário (Orquestrador / Ponte de Verificação):** Controla o ritmo (*"segue"*), envia os arquivos `.md` ao seu agente com acesso ao GitHub e ao compilador **Lean 4 + Mathlib**, devolve relatórios/erros de compilação e mantém o repositório sincronizado.
+   - **Usuário (Orquestrador / Ponte de Verificação):** Controla o ritmo (*"segue"*), envia os arquivos `.md` ao seu agente com acesso ao GitHub e ao compilador **Lean 4 `v4.36.0` + Mathlib `v4.36.0`**, devolve relatórios/erros de compilação e mantém o repositório sincronizado.
 
 3. **Regra do Termômetro de Progresso (`0%` a `100%`):**
    - Toda rodada de pesquisa **deve começar** com `**Progresso: X% / 100%**` seguido de justificativa breve e honesta.
@@ -41,7 +43,7 @@
 4. **Regra do Par Sincronizado (`README.md` + `Erdos64_lean.md` $\to$ `lean/Erdos64.lean`):**
    - **Sempre** que a IA gerar uma atualização de `README.md`, **deve gerar na mesma resposta** o arquivo `Erdos64_lean.md` contendo o código completo de `lean/Erdos64.lean` em bloco `lean` para extração automática pelo agente.
    - Substituir sempre os mesmos arquivos no GitHub (`README.md` e `lean/Erdos64.lean`), sem criar arquivos `v2`, `v3`.
-   - Emitir novos checkpoints automaticamente a cada marco real (a cada 2 ou 3 rodadas), quando o chat começar a ficar longo, ou sempre que o usuário pedir.
+   - Nunca substituir uma prova com erro por `sorry` para esconder erro de compilação; nunca alterar teoremas já `VERIFIED`.
    - Usar exclusivamente LaTeX (`$...$` e `$$...$$`) para notação matemática fora dos blocos de código Lean.
 
 ---
@@ -71,12 +73,15 @@
 
 ### Tabela Mestre de Progresso e Sincronização com `lean/Erdos64.lean`
 
-| ID | Resultado | Rodada | Declaração em `lean/Erdos64.lean` | Status Lean 4 |
+| ID | Resultado | Rodada | Declaração em `lean/Erdos64.lean` | Status Lean 4 (`v4.36.0`) |
 | :--- | :--- | :---: | :--- | :---: |
-| **Infra** | Monotonicidade de `HasPow2Cycle` por homomorfismo injetivo / subgrafo / indução | 7 | `HasPow2Cycle.map`, `mono`, `of_induce` | `READY_TO_COMPILE` |
-| **Lema 1** | Contraexemplo mínimo é conexo | 1 | `minimal_connected` | `READY_TO_COMPILE` |
-| **Lema 2** | Dois vértices distintos têm no máximo 1 vizinho comum | 1 | `no_two_common_neighbors`, `common_neighbors_le_one` | `READY_TO_COMPILE` |
-| **Lema 3** | Triângulos nunca compartilham arestas | 1 | `triangles_edge_disjoint` | `READY_TO_COMPILE` |
+| **Infra 1** | Transporte de `HasPow2Cycle` por homomorfismo injetivo | 7 | `HasPow2Cycle.map` | `READY_TO_COMPILE` |
+| **Infra 2** | Monotonicidade de `HasPow2Cycle` em subgrafos geradores | 7 | `HasPow2Cycle.mono` | **`VERIFIED`** |
+| **Infra 3** | Monotonicidade de `HasPow2Cycle` em subgrafos induzidos | 7 | `HasPow2Cycle.of_induce` | **`VERIFIED`** |
+| **Lema 1** | Contraexemplo mínimo é conexo | 1 | `minimal_connected` | **`VERIFIED`** |
+| **Lema 2a** | Dois vértices distintos têm no máximo 1 vizinho comum (estrutural) | 1 | `no_two_common_neighbors` | `READY_TO_COMPILE` |
+| **Lema 2b** | Dois vértices distintos têm no máximo 1 vizinho comum (cardinalidade) | 1 | `common_neighbors_le_one` | **`VERIFIED`** |
+| **Lema 3** | Triângulos nunca compartilham arestas | 1 | `triangles_edge_disjoint` | **`VERIFIED`** |
 | **Lema 4** | $H = V_{\ge 4}$ é um conjunto independente | 1 | `high_degree_independent` | `READY_TO_COMPILE` |
 | **Lema 5** | Contraexemplo mínimo não possui pontes | 2 | `minimal_bridgeless` | `SORRY` |
 | **Lema 6** | Dicotomia do vértice de corte e Redução ao Bloco Pinçado $\mathcal{K}$ | 2 | `pinched_block_equiv` | `PLANNED` |
@@ -90,7 +95,7 @@
 | **Teorema 15** | **Degeneração dos Triângulos $L_2$** ($G_S$ simples, livre de $C_{2^k}$, 2-degenerado) + $3\|V_3\| \ge 2n + 1$ + $\|V_3\| \ge \frac{12}{17}n$ ($S = \emptyset$) | 7 | `minimal_general_cubicity`, `minimal_no_K2_in_V3_cubicity` | `SORRY` |
 | **Prop. 16** | Rigidez de $C_7$-fatores sem $K_3$ ($\delta(H_7^{\text{simp}}) \ge 3$) + Lei Modular $p \mid (d+2)$ | 7 | *(resultado de fronteira / classificação)* | `N/A` |
 
-*(Legenda Lean 4: `READY_TO_COMPILE` = prova escrita sem `sorry`, aguardando teste no compilador do agente; `VERIFIED` = compilado sem erro e sem `sorry` no ambiente do agente; `SORRY` = enunciado tipado aguardando prova formal; `PLANNED` = pendente de transcrição.)*
+*(Legenda Lean 4: **`VERIFIED`** = compilado sem erro e sem `sorry` no ambiente Lean `v4.36.0` + Mathlib `v4.36.0` — **5 teoremas**; `READY_TO_COMPILE` = prova escrita/corrigida sem `sorry`, aguardando recompilação — **4 teoremas**; `SORRY` = enunciado tipado aguardando prova formal — **9 declarações**; `PLANNED` = pendente de transcrição.)*
 
 ---
 
@@ -109,36 +114,27 @@
 #### Lema 13A e Teorema 13 (3-Conectividade e Redução à Metade em Bipartidos)
 > Seja $G$ **qualquer** grafo finito simples **bipartido** de ordem $n$ com $\delta(G) \ge 3$ e livre de $C_{2^k}$ ($k \ge 2$). Se $G$ **não é 3-conexo**, então existe um **menor próprio** simples $G'$ de $G$ com $\delta(G') \ge 3$, livre de $C_{2^k}$, e ordem $|V(G')| \le \lfloor \frac{n+2}{2} \rfloor$ (com $\le \lfloor \frac{n+1}{2} \rfloor$ se há vértice de corte e $\le \lfloor \frac{n}{2} \rfloor$ se há corte de 2 arestas).
 
-**Prova resumida:**
-* *Desconexo:* menor componente dá $|V(G')| \le \lfloor n/2 \rfloor$.
-* *Vértice de corte:* menor bloco-folha $B$ tem $|V(B)| \le \lfloor \frac{n+1}{2} \rfloor$ e único vértice de corte $v$. Se $\deg_B(v) \ge 3$, tome $G' = B$; se $\deg_B(v) = 2$ com vizinhos $a, b$, eles estão na mesma classe de bipartição, logo $G' = (B - v) + ab$ é menor simples, $\delta \ge 3$, e todo novo ciclo usando $ab$ tem comprimento ímpar.
-* *Corte de 2 vértices:* escolha $(\{u, v\}, C_1)$ minimizando $|V(C_1)| \le \lfloor \frac{n-2}{2} \rfloor$. Pela minimalidade, $|N_G(u) \cap V(C_1)| \ge 2$ e $|N_G(v) \cap V(C_1)| \ge 2$ (Lema 13A). Seja $A_1 = G[V(C_1) \cup \{u, v\}] - uv$.
-  - Se $u, v$ estão na **mesma classe**: $G' = A_1 + uv$ (contraindo outra componente $C_2$ em $u$) é menor simples de ordem $\le \lfloor \frac{n+2}{2} \rfloor$, $\delta \ge 3$, e novos ciclos têm comprimento ímpar.
-  - Se $u, v$ estão em **classes opostas**: $N_{A_1}(u) \cap N_{A_1}(v) = \emptyset$; contraindo $G[V(C_2) \cup \{u, v\}]$ em $z$ obtém-se $G' = A_1 / \{u \sim v\}$ simples, ordem $\le \lfloor \frac{n}{2} \rfloor$, $\deg_{G'}(z) \ge 4$, e todo ciclo passando por $z$ desdobra em ciclo de $A_1$ ou caminho $u$–$v$ de comprimento ímpar. $\blacksquare$
-
 * **Corolário 13.1:** Todo contraexemplo mínimo bipartido em qualquer classe fechada por menores é **3-conexo**.
 * **Corolário 13.2:** Combinado com $n > 40$ (Ducoffe–Dumitru), todo bipartido não-3-conexo com $\delta \ge 3$ e $n \le 79$ (ou $n \le 81$ com corte de 2 arestas) satisfaz Erdős–Gyárfás.
 
 #### Teorema 14 (Colagem Assimétrica em Cortes de 2 Arestas no Caso Geral)
 > Em um contraexemplo mínimo geral $G$, se $\{u_1 v_1, u_2 v_2\}$ é corte de 2 arestas não trivial separando $A$ e $B$ com $|V(A)| \le |V(B)|$ e $S(A)$ é o conjunto dos comprimentos de caminhos $u_1$–$u_2$ em $A$:
-> 1. Existem $\ell_1, \ell_2 \in S(A)$ e $d \ge 2$ com $\ell_1 + \ell_2 = 2^d - 1$ (colando $A', A''$ identificando $u_1' = u_1''$ e ligando $u_2' u_2''$, ordem $2|V(A)| - 1 < n$). Em particular, **$A$ nunca é bipartido**.
-> 2. Se $u_1 u_2 \notin E(A)$ e $v_1 v_2 \notin E(B)$, então $P_A = \{a \ge 2 : 2^a - 1 \in S(A)\}$ e $P_B = \{b \ge 2 : 2^b - 1 \in S(B)\}$ são não vazios e disjuntos ($P_A \cap P_B = \emptyset$). $\blacksquare$
+> 1. Existem $\ell_1, \ell_2 \in S(A)$ e $d \ge 2$ com $\ell_1 + \ell_2 = 2^d - 1$. Em particular, **$A$ nunca é bipartido**.
+> 2. Se $u_1 u_2 \notin E(A)$ e $v_1 v_2 \notin E(B)$, então $P_A = \{a \ge 2 : 2^a - 1 \in S(A)\}$ e $P_B = \{b \ge 2 : 2^b - 1 \in S(B)\}$ são não vazios e disjuntos ($P_A \cap P_B = \emptyset$).
 
 ---
 
 ### 3.3. Rodada 7 — Degeneração dos Triângulos $L_2$ e Lei Modular (Teorema 15 e Proposição 16)
 
 #### Teorema 15 (Degeneração dos Triângulos $L_2$)
-> Seja $G$ qualquer contraexemplo mínimo e $S \subseteq H_4$ o conjunto das testemunhas únicas $x_C$ das componentes $K_2$ de $G[L]$ (triângulos disjuntos $T_x = \{x, v_x, w_x\}$). O grafo contraído $G_S$ sobre $S$ (aresta entre $x, y \in S$ iff existe aresta em $G$ entre $T_x$ e $T_y$) é **simples**, tem $\Delta(G_S) \le 4$ (orientação canônica $\deg^+, \deg^- \le 2$), é **livre de $C_{2^k}$ ($k \ge 2$)** e é **2-degenerado**.
+> Seja $G$ qualquer contraexemplo mínimo e $S \subseteq H_4$ o conjunto das testemunhas únicas $x_C$ das componentes $K_2$ de $G[L]$ (triângulos disjuntos $T_x = \{x, v_x, w_x\}$). O grafo contraído $G_S$ sobre $S$ é **simples**, tem $\Delta(G_S) \le 4$ (orientação canônica $\deg^+, \deg^- \le 2$), é **livre de $C_{2^k}$ ($k \ge 2$)** e é **2-degenerado**.
 
-**Prova:** Simplicidade: $xy \notin E(G)$ ($H$ independente), sem arestas entre $\{v_x, w_x\}$ e $\{v_y, w_y\}$ (componentes distintas de $G[L]$), e duas arestas entre $T_x, T_y$ sempre fecham $C_4$. Levantamento de ciclo $Q$ de comprimento $L = 2^k$ em $G_S$: ao longo da orientação canônica de $Q$, o número de sorvedouros $s$ (únicos vértices com passo interno $0$) iguala o de fontes, logo $s \le L/2$ e o número de não-sorvedouros $t = L - s$ satisfaz $L/2 \le t \le L$. Em cada um desses $t$ triângulos os extremos de entrada e saída são distintos (cada $v_x, w_x$ tem apenas 1 aresta externa), oferecendo escolha $\{1, 2\}$. Escolhendo $L - t$ passos de tamanho $2$ e $2t - L$ de tamanho $1$ obtém-se ciclo simples em $G$ de comprimento $L + 2(L - t) + (2t - L) = 2L = 2^{k+1}$, absurdo. Como $|S| \le n/3 < n$, pela minimalidade de $G$, nenhum subgrafo não vazio de $G_S$ tem $\delta \ge 3$, logo $G_S$ é 2-degenerado. $\blacksquare$
-
-* **Corolário 15.1:** Se $H \ne \emptyset$, então $|S| < |H|$ (pois $S = H$ tornaria $G_S$ 4-regular), logo $L_0 \cup L_1 \ne \emptyset$ e **$3|V_3| \ge 2|V(G)| + 1$** (nova prova combinatória própria da cota $|V_3| > \frac{2}{3}n$).
-* **Corolário 15.2:** Se $S = \emptyset$ (nenhuma componente $K_2$ em $G[L]$), então $|L_2| \le 2|L_1| + 3|L_0|$, resultando em **$|V_3| \ge \frac{12}{17}n \approx 70{,}59\%$**.
+* **Corolário 15.1:** Se $H \ne \emptyset$, então $|S| < |H|$, logo $L_0 \cup L_1 \ne \emptyset$ e **$3|V_3| \ge 2|V(G)| + 1$** (nova prova combinatória própria de $|V_3| > \frac{2}{3}n$).
+* **Corolário 15.2:** Se $S = \emptyset$ (nenhuma componente $K_2$ em $G[L]$), então **$|V_3| \ge \frac{12}{17}n \approx 70{,}59\%$**.
 
 #### Proposição 16 (Rigidez de $C_7$-Fatores e Lei Modular)
-1. Em cúbicos sem triângulos livres de $C_{2^k}$ com $C_7$-fator, $H_7$ não tem laços e tem multiplicidade $\le 3$ (análise exaustiva das 4 partições de 7 em 4 partes), garantindo $\delta(H_7^{\text{simp}}) \ge 3$.
-2. **Lei Modular:** Para $C_d$-fatores, se $p \mid (d+2)$ ($p \ge 3$ ou $p = 4$), entradas $s \equiv -1 \pmod p$ forçam ambos os passos $\{1 + s, 1 + d - s\}$ a serem múltiplos de $p$ (obstrução $\bmod 4$ para $d = 6$, $\bmod 3$ para $d = 7$), impedindo levantamento incondicional de $C_{2^k}$ fora de $d \in \{3, 5\}$.
+1. Em cúbicos sem triângulos livres de $C_{2^k}$ com $C_7$-fator, $H_7$ não tem laços e tem multiplicidade $\le 3$, garantindo $\delta(H_7^{\text{simp}}) \ge 3$.
+2. **Lei Modular:** Para $C_d$-fatores, se $p \mid (d+2)$ ($p \ge 3$ ou $p = 4$), entradas $s \equiv -1 \pmod p$ forçam ambos os passos $\{1 + s, 1 + d - s\}$ a serem múltiplos de $p$ (obstrução $\bmod 4$ para $d = 6$, $\bmod 3$ para $d = 7$).
 
 ---
 
@@ -146,39 +142,53 @@
 
 1. **Busca bruta computacional em grafos pequenos:** Descartada até $n \le 40$ (geral), $n \le 48$ (cúbico), $n \le 66$ (bipartido) e $n \le 79$ (bipartido não-3-conexo, pelo Corolário 13.2).
 2. **Grafos planares bipartidos:** Caso trivial pela fórmula de Euler (livre de $C_4 \implies$ cintura $\ge 6 \implies$ grau médio $< 3$).
-3. **Densidade pura de grafos 2-degenerados com $\Delta \le 4$ (como $G_S$ ou $M$):** Existem grafos 2-degenerados com $\Delta \le 4$ e cintura arbitrariamente alta atingindo $2m - O(1)$ arestas (construção por fila de vértices ativos), então a 2-degeneração de $G_S$ sozinha não limita $|S|/h$ abaixo de $1 - o(1)$ — ela apenas elimina $S = H$.
-4. **Contração simples de todos os triângulos $G / \mathcal{T}$ em cúbicos:** $G / \mathcal{T}$ é sempre cúbico simples, mas um $C_4$ em $G/\mathcal{T}$ passando por apenas $t = 1$ triângulo levanta para $\{5, 6\}$ e escapa de $4$ e $8$.
+3. **Densidade pura de grafos 2-degenerados com $\Delta \le 4$ (como $G_S$ ou $M$):** Existem grafos 2-degenerados com $\Delta \le 4$ e cintura arbitrariamente alta atingindo $2m - O(1)$ arestas, então a 2-degeneração de $G_S$ sozinha apenas elimina $S = H$.
+4. **Contração simples de todos os triângulos $G / \mathcal{T}$ em cúbicos:** Um $C_4$ em $G/\mathcal{T}$ passando por apenas $t = 1$ triângulo levanta para $\{5, 6\}$ e escapa de $4$ e $8$.
 5. **Levantamento incondicional de $C_d$-fatores para $d \ge 6$:** Bloqueado pela Lei Modular (Proposição 16: $d=6 \bmod 4$, $d=7 \bmod 3$) e por cordas internas de passo 2 ou 4.
 6. **Contração de 2-fator misto $\{C_3, C_5\}$:** $C_4$ contraído com três $K_3$ e um $C_5$ ($\{2,3\}$) levanta apenas para $[9, 13]$.
 
 ---
 
-## 5. Status do Ambiente Lean 4 (`lean/Erdos64.lean`)
+## 5. Ambiente Lean 4 e Regras Obrigatórias (`v4.36.0`)
 
-* **Arquivo de transporte entregue:** `Erdos64_lean.md` (extrair bloco `lean` para `lean/Erdos64.lean`).
-* **Prontos para compilar sem `sorry` (`READY_TO_COMPILE` — 7 blocos):**
-  1. `HasPow2Cycle.map`, `HasPow2Cycle.mono`, `HasPow2Cycle.of_induce`
-  2. `no_two_common_neighbors` (Lema 2a)
-  3. `common_neighbors_le_one` (Lema 2b)
-  4. `triangles_edge_disjoint` (Lema 3)
-  5. `minimal_connected` (Lema 1)
-  6. `high_degree_independent` (Lema 4)
-  7. `no_L3_vertices` (Corolário 8.1)
-* **Ação aguardada do agente:** Rodar `lake build` / `lake env lean lean/Erdos64.lean` e devolver versão do `lean-toolchain` + Mathlib + relatório de erros (se houver) para calibrarmos a sintaxe e passarmos todos para `VERIFIED`.
+* **Toolchain confirmado:** **Lean 4 `v4.36.0` + Mathlib `v4.36.0`** (novembro de 2026).
+* **Contagem honesta atual (`lean/Erdos64.lean` — v1.2.1):**
+  * **`VERIFIED` (5 teoremas — compilados sem erro e sem `sorry`, NÃO alterar):**
+    1. `HasPow2Cycle.mono`
+    2. `HasPow2Cycle.of_induce`
+    3. `common_neighbors_le_one`
+    4. `triangles_edge_disjoint`
+    5. `minimal_connected`
+  * **`READY_TO_COMPILE` (4 teoremas — corrigidos sem `sorry` na v1.2.1, aguardando recompilação):**
+    6. `HasPow2Cycle.map`
+    7. `no_two_common_neighbors`
+    8. `high_degree_independent`
+    9. `no_L3_vertices`
+  * **`SORRY` (9 declarações):** `minimal_bridgeless`, `triangle_cactus_no_long_cycle`, `minimal_triangle_free_cubicity`, `minimal_bipartite_cubicity`, `minimal_no_K3_factor`, `minimal_no_C5_factor`, `bipartite_not_3connected_halving`, `minimal_general_cubicity`, `minimal_no_K2_in_V3_cubicity`.
+
+### Regras de Compatibilidade Confirmadas para Lean `v4.36.0` / Mathlib `v4.36.0`
+1. **Não inventar nem chutar nomes de lemas** (ex.: `Sym2.map_pair_eq`, `Finset.erase_eq_of_not_mem`, `SimpleGraph.mem_neighborFinset.mp/.mpr` **não existem** nessa forma). Na dúvida, use `simp`, `simpa`, `omega`, `aesop`, `tauto` ou `grind`.
+2. **`Std.Symm` e `Std.Irrefl` são estruturas:** ao construir um `SimpleGraph`, use a forma de estrutura `⟨by rintro ...⟩`, e para irreflexividade de `G.Adj` use `G.ne_of_adj hvv rfl` em vez de aplicar `G.loopless` diretamente como função.
+3. **`push_neg` foi substituído por `push Not`.**
+4. **Linter `haveILetI`:** para proposições (como `Nonempty W`), use `have` em vez de `haveI`.
+5. **Aritmética em `Fin d` genérico:** não use o numeral `1 : Fin d` sem instância `OfNat` (`NeZero d`); use `⟨(j.val + 1) % d, Nat.mod_lt _ (by have := j.isLt; omega)⟩`.
+6. **`Sym2.map f s(a₁, a₂)`:** reduza por igualdade definicional com `change s(f a₁, f a₂) = s(f b₁, f b₂) at hab` seguido de `rw [Sym2.eq_iff]`.
+7. **`SimpleGraph.deleteEdges`:** `H.Adj u v` desdobra como `G.Adj u v ∧ ¬ (fromEdgeSet s).Adj u v`; simplifique sempre com `SimpleGraph.deleteEdges_adj`.
 
 ---
 
 ## 6. Plano Imediato para a Rodada 8
 
-1. **Ciclo de Calibração Lean 4 (Prioridade 1 se o usuário trouxer logs do compilador):** Corrigir eventuais ajustes de API do Mathlib nos 7 blocos `READY_TO_COMPILE`, promovê-los a `VERIFIED` e formalizar sem `sorry` o **Lema 5 (`minimal_bridgeless`)** e a parte algébrica do **Teorema 10 (`minimal_triangle_free_cubicity`)**.
-2. **Ataque Teórico Principal — Núcleo Cúbico 3-Conexo (Grafos Cúbicos Hamiltonianos & Ciclos Máximos com Cordas):**
-   - Abandonar $C_d$-fatores com $d \ge 6$ (bloqueados pela Lei Modular) e atacar o outro extremo: **estruturas de cordas sobre ciclos longos** (em particular, ciclos mais longos em grafos cúbicos 3-conexos e grafos cúbicos Hamiltonianos) e **grafos de Cayley / prismas generalizados** (como o aquecimento já feito em $G(2m, a)$ que forçou $C_4, C_8$ ou $C_{16}$).
-   - Investigar também **cortes de 3 arestas não triviais** em grafos cúbicos 3-conexos bipartidos (o próximo degrau natural após o Teorema 13).
+1. **Validação da v1.2.1 (meta: 9/9 blocos sem `sorry` promovidos a `VERIFIED`):** Assim que o compilador Lean `v4.36.0` confirmar os 4 blocos corrigidos, partir para eliminar `sorry` de `minimal_bridgeless` (Lema 5) e da parte algébrica do Teorema 10.
+2. **Ataque Teórico Principal — Núcleo Cúbico 3-Conexo:**
+   - Investigar **estruturas de cordas sobre ciclos longos / Hamiltonianos** em grafos cúbicos 3-conexos.
+   - Investigar **cortes de 3 arestas não triviais** em grafos cúbicos 3-conexos bipartidos (próximo degrau natural após o Teorema 13).
 
 ---
 
 ## 7. Changelog de Sessões
 
-* **v1.2 (21/11/2026 — Rodadas 6 e 7):** Adicionados Teorema 13 (3-conectividade e redução à metade em bipartidos, elevando barreira de não-3-conexos a $n \le 79$), Teorema 14 (colagem assimétrica em cortes de 2 arestas), Teorema 15 (degeneração dos triângulos $L_2$, prova própria de $3|V_3| \ge 2n + 1$ e piso $\frac{12}{17}n$ para $S = \emptyset$) e Proposição 16 (rigidez de $C_7$-fatores + Lei Modular). `lean/Erdos64.lean` expandido para **7 blocos sem `sorry`** (`READY_TO_COMPILE`). Progresso: `18% / 100%`.
+* **v1.2.1 (22/11/2026 — Calibração Lean `v4.36.0`):** Corrigidos todos os 15 erros de compilação em `lean/Erdos64.lean` para Lean `v4.36.0` + Mathlib `v4.36.0`, mantendo os 5 teoremas já verificados intocados e sem esconder nenhum erro com `sorry`. Documentadas as regras de compatibilidade `v4.36.0` e a contagem honesta (5 `VERIFIED`, 4 `READY_TO_COMPILE`, 9 `SORRY`). Progresso: `18% / 100%`.
+* **v1.2 (21/11/2026 — Rodadas 6 e 7):** Teoremas 13, 14, 15 e Proposição 16. Progresso: `18% / 100%`.
 * **v1.1 (21/11/2026 — Sincronização):** Comando automático no topo, Regra do Par Sincronizado e extração de `Erdos64_lean.md`. Progresso: `11% / 100%`.
 * **v1.0 (21/11/2026 — Rodadas 1 a 5):** Lemas 1–6, Bloco Pinçado, Teoremas 7–12. Progresso: `11% / 100%`.
