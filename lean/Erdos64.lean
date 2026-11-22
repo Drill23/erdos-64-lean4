@@ -1,19 +1,21 @@
 import Mathlib
 
 /-!
-# Projeto Erdős #64 — Formalização em Lean 4 (`Checkpoint v1.2`)
+# Projeto Erdős #64 — Formalização em Lean 4 (`Checkpoint v1.2.1`)
 
-Sincronizado com `README.md` (v1.2 — Pós-Rodada 7, Progresso `18% / 100%`).
+Sincronizado com `README.md` (v1.2.1 — Calibração Lean `v4.36.0` / Mathlib `v4.36.0`, Progresso `18% / 100%`).
 
 Status dos blocos:
-- `HasPow2Cycle.map / mono / of_induce` : READY_TO_COMPILE (sem `sorry`)
-- `no_two_common_neighbors`             : READY_TO_COMPILE (sem `sorry`)
-- `common_neighbors_le_one`             : READY_TO_COMPILE (sem `sorry`)
-- `triangles_edge_disjoint`             : READY_TO_COMPILE (sem `sorry`)
-- `minimal_connected`                   : READY_TO_COMPILE (sem `sorry`)
-- `high_degree_independent`             : READY_TO_COMPILE (sem `sorry`)
-- `no_L3_vertices`                      : READY_TO_COMPILE (sem `sorry`)
-- Demais teoremas (Rodadas 2–7)         : enunciados tipados com `sorry`
+- `HasPow2Cycle.mono`                   : VERIFIED (sem `sorry`, intocado)
+- `HasPow2Cycle.of_induce`              : VERIFIED (sem `sorry`, intocado)
+- `common_neighbors_le_one`             : VERIFIED (sem `sorry`, intocado)
+- `triangles_edge_disjoint`             : VERIFIED (sem `sorry`, intocado)
+- `minimal_connected`                   : VERIFIED (sem `sorry`, intocado)
+- `HasPow2Cycle.map`                    : READY_TO_COMPILE (corrigido sem `sorry`)
+- `no_two_common_neighbors`             : READY_TO_COMPILE (corrigido sem `sorry`)
+- `high_degree_independent`             : READY_TO_COMPILE (corrigido sem `sorry`)
+- `no_L3_vertices`                      : READY_TO_COMPILE (corrigido sem `sorry`)
+- Demais 9 teoremas (Rodadas 2–7)       : enunciados tipados com `sorry`
 -/
 
 open SimpleGraph
@@ -57,7 +59,8 @@ theorem HasPow2Cycle.map {V W : Type*} {H : SimpleGraph V} {G : SimpleGraph W}
     intro a b hab
     induction a using Sym2.ind with | _ a₁ a₂ =>
     induction b using Sym2.ind with | _ b₁ b₂ =>
-    simp only [Sym2.map_pair_eq, Sym2.eq_iff] at hab ⊢
+    change s(f a₁, f a₂) = s(f b₁, f b₂) at hab
+    rw [Sym2.eq_iff] at hab ⊢
     rcases hab with ⟨h1, h2⟩ | ⟨h1, h2⟩
     · exact Or.inl ⟨hf h1, hf h2⟩
     · exact Or.inr ⟨hf h1, hf h2⟩
@@ -113,7 +116,7 @@ theorem no_two_common_neighbors {V : Type*} (G : SimpleGraph V)
       refine ⟨⟨?_, ?_, ?_⟩, ⟨?_, ?_⟩, ?_⟩ <;> tauto
     · simp only [p, Walk.support_cons, Walk.support_nil, List.tail_cons, List.nodup_cons,
         List.mem_cons, List.not_mem_nil, or_false, not_or, List.nodup_nil, and_true]
-      exact ⟨⟨hne_vw₁.symm, hw, hne_uw₁.symm⟩, ⟨hne_vw₂, huv.symm⟩, hne_uw₂.symm⟩
+      exact ⟨⟨hne_vw₁.symm, hw, hne_uw₁.symm⟩, ⟨hne_vw₂, huv.symm⟩, ⟨hne_uw₂.symm, not_false⟩⟩
   exact hfree ⟨u, p, 2, le_rfl, hp_cycle, rfl⟩
 
 /-- Lema 2 (versão cardinalidade): O conjunto de vizinhos comuns de dois vértices distintos
@@ -195,49 +198,28 @@ theorem high_degree_independent {V : Type} [Fintype V] [Nonempty V] [DecidableEq
     · subst hxu
       have hnb : H.neighborFinset x = (G.neighborFinset x).erase v := by
         ext y
-        simp only [H, SimpleGraph.mem_neighborFinset, SimpleGraph.deleteEdges_adj,
-          Set.mem_singleton_iff, Finset.mem_erase, Sym2.eq_iff]
-        constructor
-        · rintro ⟨hxy, hne⟩
-          refine ⟨fun hy => hne (Or.inl ⟨rfl, hy⟩), hxy⟩
-        · rintro ⟨hy, hxy⟩
-          refine ⟨hxy, ?_⟩
-          rintro (⟨_, rfl⟩ | ⟨rfl, _⟩)
-          · exact hy rfl
-          · exact huv_ne rfl
-      rw [SimpleGraph.degree, hnb,
-        Finset.card_erase_of_mem (SimpleGraph.mem_neighborFinset.mpr huv)]
+        simp [H, SimpleGraph.mem_neighborFinset, SimpleGraph.deleteEdges_adj,
+          Set.mem_singleton_iff, Finset.mem_erase, Sym2.eq_iff, huv_ne] <;> tauto
+      have hv_mem : v ∈ G.neighborFinset x := by
+        simpa [SimpleGraph.mem_neighborFinset] using huv
+      rw [SimpleGraph.degree, hnb, Finset.card_erase_of_mem hv_mem]
       change 3 ≤ G.degree x - 1
       omega
     · by_cases hxv : x = v
       · subst hxv
         have hnb : H.neighborFinset x = (G.neighborFinset x).erase u := by
           ext y
-          simp only [H, SimpleGraph.mem_neighborFinset, SimpleGraph.deleteEdges_adj,
-            Set.mem_singleton_iff, Finset.mem_erase, Sym2.eq_iff]
-          constructor
-          · rintro ⟨hxy, hne⟩
-            refine ⟨fun hy => hne (Or.inr ⟨rfl, hy⟩), hxy⟩
-          · rintro ⟨hy, hxy⟩
-            refine ⟨hxy, ?_⟩
-            rintro (⟨rfl, _⟩ | ⟨_, rfl⟩)
-            · exact huv_ne rfl
-            · exact hy rfl
-        rw [SimpleGraph.degree, hnb,
-          Finset.card_erase_of_mem (SimpleGraph.mem_neighborFinset.mpr huv.symm)]
+          simp [H, SimpleGraph.mem_neighborFinset, SimpleGraph.deleteEdges_adj,
+            Set.mem_singleton_iff, Finset.mem_erase, Sym2.eq_iff, huv_ne, huv_ne.symm] <;> tauto
+        have hu_mem : u ∈ G.neighborFinset x := by
+          simpa [SimpleGraph.mem_neighborFinset] using huv.symm
+        rw [SimpleGraph.degree, hnb, Finset.card_erase_of_mem hu_mem]
         change 3 ≤ G.degree x - 1
         omega
       · have hnb : H.neighborFinset x = G.neighborFinset x := by
           ext y
-          simp only [H, SimpleGraph.mem_neighborFinset, SimpleGraph.deleteEdges_adj,
-            Set.mem_singleton_iff, Sym2.eq_iff]
-          constructor
-          · exact fun h => h.1
-          · intro hxy
-            refine ⟨hxy, ?_⟩
-            rintro (⟨rfl, _⟩ | ⟨rfl, _⟩)
-            · exact hxu rfl
-            · exact hxv rfl
+          simp [H, SimpleGraph.mem_neighborFinset, SimpleGraph.deleteEdges_adj,
+            Set.mem_singleton_iff, Sym2.eq_iff, hxu, hxv]
         rw [SimpleGraph.degree, hnb]
         exact hmin.1.1 x
   have hedge_lt : H.edgeFinset.card < G.edgeFinset.card := by
@@ -252,7 +234,7 @@ theorem high_degree_independent {V : Type} [Fintype V] [Nonempty V] [DecidableEq
       have hmemG : s(u, v) ∈ G.edgeFinset := SimpleGraph.mem_edgeFinset.mpr huv
       rw [← heq] at hmemG
       have hmemH : H.Adj u v := SimpleGraph.mem_edgeFinset.mp hmemG
-      exact hmemH.2 rfl
+      simp [H, SimpleGraph.deleteEdges_adj] at hmemH
   have hcmp := hmin.2 V H ⟨hdegH, hfreeH⟩
   omega
 
@@ -269,12 +251,12 @@ theorem minimal_bridgeless {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
 /-- Subgrafo `G_Δ` das arestas que pertencem a pelo menos um triângulo em `G`. -/
 def triangleSubgraph {V : Type*} (G : SimpleGraph V) : SimpleGraph V where
   Adj u v := G.Adj u v ∧ ∃ w : V, G.Adj u w ∧ G.Adj v w
-  symm := by
+  symm := ⟨by
     rintro u v ⟨huv, w, huw, hvw⟩
-    exact ⟨huv.symm, w, hvw, huw⟩
-  loopless := by
-    intro v ⟨hvv, _⟩
-    exact G.loopless v hvv
+    exact ⟨huv.symm, w, hvw, huw⟩⟩
+  loopless := ⟨by
+    rintro v ⟨hvv, _⟩
+    exact G.ne_of_adj hvv rfl⟩
 
 /-- Teorema 7: Em qualquer grafo livre de C_{2^k}, `G_Δ` não possui ciclos de comprimento ≥ 4. -/
 theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
@@ -292,7 +274,7 @@ theorem no_L3_vertices {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
     ∃ u : V, G.Adj v u ∧ G.degree u = 3 := by
   classical
   by_contra hno
-  push_neg at hno
+  push Not at hno
   have hnb_ge4 : ∀ u : V, G.Adj v u → 4 ≤ G.degree u := by
     intro u hvu
     have h3 : 3 ≤ G.degree u := hmin.1.1 u
@@ -303,10 +285,12 @@ theorem no_L3_vertices {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
     change 0 < G.degree v
     omega
   rcases hne_nb with ⟨u₀, hu₀⟩
-  have hu₀_ne : u₀ ≠ v := (G.ne_of_adj (SimpleGraph.mem_neighborFinset.mp hu₀)).symm
+  have hvu₀ : G.Adj v u₀ := by
+    simpa [SimpleGraph.mem_neighborFinset] using hu₀
+  have hu₀_ne : u₀ ≠ v := (G.ne_of_adj hvu₀).symm
   let S : Set V := {x : V | x ≠ v}
   let W : Type := {x : V // x ∈ S}
-  haveI : Nonempty W := ⟨⟨u₀, hu₀_ne⟩⟩
+  have : Nonempty W := ⟨⟨u₀, hu₀_ne⟩⟩
   let H : SimpleGraph W := G.induce S
   have hfreeH : ¬ HasPow2Cycle H := fun h => hmin.1.2 (HasPow2Cycle.of_induce h)
   have hdegH : ∀ x : W, 3 ≤ H.degree x := by
@@ -323,11 +307,17 @@ theorem no_L3_vertices {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
       rw [SimpleGraph.degree, ← himg, Finset.card_image_of_injective _ Subtype.val_injective]
     rw [hcard]
     by_cases hxv : G.Adj x.1 v
-    · rw [Finset.card_erase_of_mem (SimpleGraph.mem_neighborFinset.mpr hxv)]
+    · have hv_mem : v ∈ G.neighborFinset x.1 := by
+        simpa [SimpleGraph.mem_neighborFinset] using hxv
+      rw [Finset.card_erase_of_mem hv_mem]
       have h4 := hnb_ge4 x.1 hxv.symm
       change 3 ≤ G.degree x.1 - 1
       omega
-    · rw [Finset.erase_eq_of_not_mem (by simpa [SimpleGraph.mem_neighborFinset] using hxv)]
+    · have herase : (G.neighborFinset x.1).erase v = G.neighborFinset x.1 := by
+        ext y
+        simp only [Finset.mem_erase, SimpleGraph.mem_neighborFinset]
+        exact ⟨fun h => h.2, fun hxy => ⟨fun hyv => hxv (hyv ▸ hxy), hxy⟩⟩
+      rw [herase]
       exact hmin.1.1 x.1
   have hlt : Fintype.card W < Fintype.card V := by
     have hss : Finset.univ.image (Subtype.val : W → V) ⊂ Finset.univ := by
@@ -336,7 +326,7 @@ theorem no_L3_vertices {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
       have hv_mem : v ∈ Finset.univ.image (Subtype.val : W → V) := by
         rw [heq]; exact Finset.mem_univ v
       rcases Finset.mem_image.mp hv_mem with ⟨w, _, hwv⟩
-      exact w.2 hwv.symm
+      exact w.2 hwv
     have hcard := Finset.card_lt_card hss
     rw [Finset.card_image_of_injective _ Subtype.val_injective,
       Finset.card_univ, Finset.card_univ] at hcard
@@ -366,7 +356,8 @@ theorem minimal_bipartite_cubicity {V : Type} [Fintype V] [Nonempty V] [Decidabl
 def HasPureCycleFactor {V : Type*} [Fintype V] (G : SimpleGraph V) (d : ℕ) : Prop :=
   ∃ (ι : Type) (_ : Fintype ι) (f : ι → Fin d → V),
     Function.Bijective (fun p : ι × Fin d => f p.1 p.2) ∧
-    ∀ (i : ι) (j : Fin d), G.Adj (f i j) (f i (j + 1))
+    ∀ (i : ι) (j : Fin d),
+      G.Adj (f i j) (f i ⟨(j.val + 1) % d, Nat.mod_lt _ (by have := j.isLt; omega)⟩)
 
 /-- Teorema 11: Nenhum contraexemplo mínimo é cúbico com um K_3-fator. -/
 theorem minimal_no_K3_factor {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
