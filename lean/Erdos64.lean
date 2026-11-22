@@ -514,6 +514,62 @@ theorem cycle_detour_cons {V : Type*} {G : SimpleGraph V} {v a w : V}
     · exact G.ne_of_adj h h1
   · exact hwq (Walk.snd_mem_support_of_mem_edges q he)
 
+
+/-- Corte por corda: uma corda `c.getVert i — x` (fora das arestas do ciclo) divide o ciclo `c`
+em dois ciclos de comprimentos `i + 1` e `c.length - i + 1`. -/
+theorem cycle_chord_split {V : Type*} {H : SimpleGraph V} {x : V} (c : H.Walk x x)
+    (hc : c.IsCycle) {i : ℕ} (hi0 : 0 < i) (hin : i < c.length)
+    (hadj : H.Adj (c.getVert i) x) (hnot : s(c.getVert i, x) ∉ c.edges) :
+    (∃ (y : V) (q : H.Walk y y), q.IsCycle ∧ q.length = i + 1) ∧
+    (∃ (y : V) (q : H.Walk y y), q.IsCycle ∧ q.length = c.length - i + 1) := by
+  refine ⟨⟨_, Walk.cons hadj (c.take i), ?_, ?_⟩, ⟨_, Walk.cons hadj.symm (c.drop i), ?_, ?_⟩⟩
+  · rw [Walk.cons_isCycle_iff]
+    refine ⟨hc.isPath_take hin, fun hm => hnot ?_⟩
+    rw [Walk.edges_take] at hm
+    exact List.mem_of_mem_take hm
+  · simp [Walk.take_length]; omega
+  · rw [Walk.cons_isCycle_iff]
+    refine ⟨hc.isPath_drop hi0, fun hm => hnot ?_⟩
+    rw [Walk.edges_drop] at hm
+    rw [Sym2.eq_swap]
+    exact List.mem_of_mem_drop hm
+  · simp [Walk.drop_length]; omega
+
+/-- Corte por ápice externo: um vértice `w` fora do ciclo adjacente a `x` e a `c.getVert i`
+divide o ciclo em dois ciclos de comprimentos `i + 2` e `c.length - i + 2`. -/
+theorem cycle_apex_split {V : Type*} {H : SimpleGraph V} {x w : V} (c : H.Walk x x)
+    (hc : c.IsCycle) {i : ℕ} (hi0 : 0 < i) (hin : i < c.length)
+    (hne : c.getVert i ≠ x) (hw : w ∉ c.support)
+    (h1 : H.Adj (c.getVert i) w) (h2 : H.Adj w x) :
+    (∃ (y : V) (q : H.Walk y y), q.IsCycle ∧ q.length = i + 2) ∧
+    (∃ (y : V) (q : H.Walk y y), q.IsCycle ∧ q.length = c.length - i + 2) := by
+  have hwt : w ∉ (c.take i).support := fun hm => hw (by
+    rw [Walk.support_take] at hm; exact List.mem_of_mem_take hm)
+  have hwd : w ∉ (c.drop i).support := fun hm => hw (by
+    rw [Walk.drop_support_eq_support_drop_min] at hm; exact List.mem_of_mem_drop hm)
+  refine ⟨⟨_, Walk.cons h1 (Walk.cons h2 (c.take i)), ?_, ?_⟩,
+    ⟨_, Walk.cons h2.symm (Walk.cons h1.symm (c.drop i)), ?_, ?_⟩⟩
+  · rw [Walk.cons_isCycle_iff, Walk.cons_isPath_iff]
+    refine ⟨⟨hc.isPath_take hin, hwt⟩, fun hm => ?_⟩
+    rw [Walk.edges_cons, List.mem_cons] at hm
+    rcases hm with he | he
+    · rw [Sym2.eq_iff] at he
+      rcases he with ⟨_, h⟩ | ⟨h, _⟩
+      · exact H.ne_of_adj h2 h
+      · exact hne h
+    · exact hwt (Walk.snd_mem_support_of_mem_edges _ he)
+  · simp [Walk.take_length]; omega
+  · rw [Walk.cons_isCycle_iff, Walk.cons_isPath_iff]
+    refine ⟨⟨hc.isPath_drop hi0, hwd⟩, fun hm => ?_⟩
+    rw [Walk.edges_cons, List.mem_cons] at hm
+    rcases hm with he | he
+    · rw [Sym2.eq_iff] at he
+      rcases he with ⟨_, h⟩ | ⟨h, _⟩
+      · exact H.ne_of_adj h1 h.symm
+      · exact hne h.symm
+    · exact hwd (Walk.fst_mem_support_of_mem_edges _ he)
+  · simp [Walk.drop_length]; omega
+
 /-- Teorema 7: Em qualquer grafo livre de C_{2^k}, `G_Δ` não possui ciclos de comprimento ≥ 4. -/
 theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
     (G : SimpleGraph V) (hfree : ¬ HasPow2Cycle G) :
