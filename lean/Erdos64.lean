@@ -511,7 +511,7 @@ theorem cycle_detour_cons {V : Type*} {G : SimpleGraph V} {v a w : V}
   · rw [Sym2.eq_iff] at he
     rcases he with ⟨h1, _⟩ | ⟨h1, h2⟩
     · exact hwv h1.symm
-    · exact hwv h1.symm
+    · exact G.ne_of_adj h h1
   · exact hwq (Walk.snd_mem_support_of_mem_edges q he)
 
 /-- Teorema 7: Em qualquer grafo livre de C_{2^k}, `G_Δ` não possui ciclos de comprimento ≥ 4. -/
