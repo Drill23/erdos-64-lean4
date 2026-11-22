@@ -1,23 +1,22 @@
 import Mathlib
 
 /-!
-# Projeto Erdős #64 — Formalização em Lean 4 (`Checkpoint v1.3`)
+# Projeto Erdős #64 — Formalização em Lean 4 (`Checkpoint v1.4`)
 
-Sincronizado com `README.md` (v1.3 — Pós-Rodada 8, Lean `v4.36.0` / Mathlib `v4.36.0`, Progresso `22% / 100%`).
+Sincronizado com `README.md` e `Erdos64_lean.md` (Pós-Rodada 9, Progresso `24% / 100%`).
+Lean `v4.36.0` / Mathlib `v4.36.0`: 0 erros, 0 avisos de linter e 9 avisos de `sorry`.
 
-Status dos blocos:
-- `HasPow2Cycle.map`                    : VERIFIED (sem `sorry`)
-- `HasPow2Cycle.mono`                   : VERIFIED (sem `sorry`)
-- `HasPow2Cycle.of_induce`              : VERIFIED (sem `sorry`)
-- `no_two_common_neighbors`             : VERIFIED (sem `sorry`)
-- `common_neighbors_le_one`             : VERIFIED (sem `sorry`)
-- `triangles_edge_disjoint`             : VERIFIED (sem `sorry`)
-- `minimal_connected`                   : VERIFIED (sem `sorry`, linter limpo v1.3)
-- `high_degree_independent`             : VERIFIED (sem `sorry`, linter limpo v1.3)
-- `no_L3_vertices`                      : VERIFIED (sem `sorry`)
-- `fullerene_euler_inequality`          : READY_TO_COMPILE (novo, sem `sorry` — Rodada 8)
-- `planar_girth5_no_C8_card_ge_60`      : READY_TO_COMPILE (novo, sem `sorry` — Rodada 8)
-- Demais 10 declarações (Rodadas 2–8)   : enunciados tipados com `sorry`
+16 teoremas públicos verificados sem dependência de `sorry`:
+- `HasPow2Cycle.map`, `HasPow2Cycle.mono`, `HasPow2Cycle.of_induce`
+- `no_two_common_neighbors`, `common_neighbors_le_one`, `triangles_edge_disjoint`
+- `minimal_connected`, `high_degree_independent`, `no_L3_vertices`
+- `fullerene_euler_inequality`, `planar_girth5_no_C8_card_ge_60`
+- `minimal_bridgeless`
+- `bipartite_three_terminals_same_color`, `even_closed_walk_same_color_edges`,
+  `two_join_edges_dyadic_residues` (lemas auxiliares do Teorema 19)
+- `hex_has_cycle16_of_no_close_collision`
+
+Em `hex_covering_has_cycle_4_8_16`, apenas o raio de colisão 6 mantém `sorry`.
 -/
 
 open SimpleGraph
@@ -72,8 +71,8 @@ theorem HasPow2Cycle.map {V W : Type*} {H : SimpleGraph V} {G : SimpleGraph W}
     | cons hstep q =>
       refine
         { edges_nodup := by
-            rw [Walk.edges_map]
-            exact hp.edges_nodup.map hSym2
+             rw [Walk.edges_map]
+             exact hp.edges_nodup.map hSym2
           ne_nil := by simp
           support_nodup := by
             have hsup : q.support.Nodup := by
@@ -242,11 +241,233 @@ theorem high_degree_independent {V : Type} [Fintype V] [Nonempty V] [DecidableEq
 
 /-! ### Rodada 2: Conectividade (Lema 5) -/
 
+/-- Duas cópias do conjunto de vértices com uma única cópia da raiz. -/
+private abbrev RootDouble {W : Type} (r : W) :=
+  {p : W × Bool // p.1 = r → p.2 = false}
+
+private def doubleRoot {W : Type} (r : W) : RootDouble r :=
+  ⟨(r, false), fun _ => rfl⟩
+
+private theorem double_eq_root {W : Type} {r : W} (x : RootDouble r)
+    (hx : x.val.1 = r) : x = doubleRoot r :=
+  Subtype.ext (Prod.ext hx (x.property hx))
+
+private def doubleGraph {W : Type} (A : SimpleGraph W) (r : W) :
+    SimpleGraph (RootDouble r) where
+  Adj x y := A.Adj x.val.1 y.val.1 ∧
+    (x.val.2 = y.val.2 ∨ x = doubleRoot r ∨ y = doubleRoot r)
+  symm := ⟨by
+    intro x y h
+    exact ⟨h.1.symm, by tauto⟩⟩
+  loopless := ⟨fun _ h => A.ne_of_adj h.1 rfl⟩
+
+private theorem double_walk_side {W : Type} {r : W} {A : SimpleGraph W}
+    {x y : RootDouble r} (p : (doubleGraph A r).Walk x y)
+    (hr : doubleRoot r ∉ p.support.dropLast) :
+    ∀ z ∈ p.support, z ≠ doubleRoot r → z.val.2 = x.val.2 := by
+  induction p with
+  | nil => simp
+  | @cons x a y hxa q ih =>
+    rw [Walk.support_cons, List.dropLast_cons_of_ne_nil q.support_ne_nil,
+      List.mem_cons, not_or] at hr
+    intro z hz hzr
+    rw [Walk.support_cons, List.mem_cons] at hz
+    rcases hz with rfl | hz
+    · rfl
+    · have har : a ≠ doubleRoot r := by
+        intro ha
+        subst a
+        cases q with
+        | nil => exact hzr (by simpa using hz)
+        | cons h q =>
+          exact hr.2 (by
+            rw [Walk.support_cons, List.dropLast_cons_of_ne_nil q.support_ne_nil]
+            exact List.mem_cons_self)
+      have hbit := hxa.2.resolve_right (fun h => h.elim (Ne.symm hr.1) har)
+      exact (ih hr.2 z hz hzr).trans hbit.symm
+
+private theorem double_cycle_fold {W : Type} {r : W} {A : SimpleGraph W}
+    {x : RootDouble r} (p : (doubleGraph A r).Walk x x) (hp : p.IsCycle)
+    (hr : doubleRoot r ∉ p.tail.support.dropLast) :
+    let f : doubleGraph A r →g A := ⟨fun z => z.val.1, fun h => h.1⟩
+    (p.map f).IsCycle := by
+  intro f
+  refine Walk.isCycle_iff_isPath_tail_and_le_length.mpr ⟨?_, by simpa using hp.three_le_length⟩
+  rw [Walk.isPath_def, (p.map f).support_tail_of_not_nil (by simpa using hp.not_nil),
+    Walk.support_map, ← List.map_tail, ← p.support_tail_of_not_nil hp.not_nil]
+  apply hp.isPath_tail.support_nodup.map_on
+  intro a ha b hb hab
+  change a.val.1 = b.val.1 at hab
+  by_cases ha' : a.val.1 = r
+  · exact (double_eq_root a ha').trans (double_eq_root b (hab.symm.trans ha')).symm
+  · have hne (z : RootDouble r) (hz : z.val.1 ≠ r) : z ≠ doubleRoot r :=
+      fun h => hz (congrArg (fun t : RootDouble r => t.val.1) h)
+    have hbitA := double_walk_side p.tail hr a ha (hne a ha')
+    have hbitB := double_walk_side p.tail hr b hb (hne b (fun hb' => ha' (hab.trans hb')))
+    exact Subtype.ext (Prod.ext hab (hbitA.trans hbitB.symm))
+
+private theorem double_hasPow2Cycle {W : Type} {A : SimpleGraph W} (r : W)
+    (h : HasPow2Cycle (doubleGraph A r)) : HasPow2Cycle A := by
+  classical
+  rcases h with ⟨x, p, k, hk, hp, hlen⟩
+  let f : doubleGraph A r →g A := ⟨fun z => z.val.1, fun h => h.1⟩
+  suffices ∀ {y : RootDouble r} (q : (doubleGraph A r).Walk y y),
+      q.IsCycle → q.length = 2 ^ k → doubleRoot r ∉ q.tail.support.dropLast →
+      HasPow2Cycle A by
+    by_cases hr : doubleRoot r ∈ p.support
+    · let q := p.rotate (doubleRoot r) hr
+      have hq : q.IsCycle := hp.rotate hr
+      apply this q hq (by simpa [q] using hlen)
+      have hn := hq.isPath_tail.support_nodup
+      rw [← q.tail.dropLast_support_concat] at hn
+      intro hm
+      exact List.disjoint_of_nodup_append hn hm (by simp)
+    · apply this p hp hlen
+      intro hm
+      apply hr
+      rw [← p.cons_support_tail hp.not_nil]
+      exact List.mem_cons_of_mem _ (List.mem_of_mem_dropLast hm)
+  intro y q hq hqLen hr
+  exact ⟨f y, q.map f, k, hk, double_cycle_fold q hq hr, by simpa using hqLen⟩
+
+private theorem double_minDegree {W : Type} [Fintype W] [DecidableEq W]
+    (A : SimpleGraph W) [DecidableRel A.Adj] (r : W)
+    [Fintype (RootDouble r)] [DecidableRel (doubleGraph A r).Adj]
+    (hr : 2 ≤ A.degree r) (hdeg : ∀ x ≠ r, 3 ≤ A.degree x)
+    (x : RootDouble r) : 3 ≤ (doubleGraph A r).degree x := by
+  classical
+  let D := doubleGraph A r
+  change 3 ≤ D.degree x
+  by_cases hx : x = doubleRoot r
+  · subst x
+    let f : A.neighborSet r × Bool → D.neighborSet (doubleRoot r) :=
+      fun ⟨y, b⟩ => ⟨⟨(y, b), fun hy => (A.ne_of_adj y.property hy.symm).elim⟩,
+        y.property, Or.inr (Or.inl rfl)⟩
+    have hf : Function.Injective f := by
+      intro ⟨y, b⟩ ⟨z, c⟩ h
+      have he : (y.val, b) = (z.val, c) :=
+        congrArg (fun w : D.neighborSet (doubleRoot r) => w.val.val) h
+      exact Prod.ext (Subtype.ext (congrArg Prod.fst he))
+        (congrArg (fun w : W × Bool => w.2) he)
+    have hc := Fintype.card_le_of_injective f hf
+    rw [Fintype.card_prod, A.card_neighborSet_eq_degree, D.card_neighborSet_eq_degree] at hc
+    simp only [Fintype.card_bool] at hc
+    omega
+  · let b := x.val.2
+    let f : A.neighborSet x.val.1 → D.neighborSet x := fun y =>
+      ⟨⟨(y, if y.val = r then false else b), fun h => by
+          change y.val = r at h
+          simp [h]⟩, y.property, by
+        by_cases hy : y.val = r
+        · right
+          exact Or.inr (double_eq_root _ hy)
+        · left
+          simp [hy, b]⟩
+    have hf : Function.Injective f := by
+      intro y z h
+      exact Subtype.ext (congrArg (fun w : D.neighborSet x => w.val.val.1) h)
+    have hc := Fintype.card_le_of_injective f hf
+    rw [A.card_neighborSet_eq_degree, D.card_neighborSet_eq_degree] at hc
+    exact (hdeg _ (fun he => hx (double_eq_root x he))).trans hc
+
+private theorem bridge_side_too_small {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] (hmin : IsMinimalCounterexample G)
+    {u v : V} (hb : G.IsBridge s(u, v))
+    (hsmall : 2 * Fintype.card {x : V // (G.deleteEdges {s(u, v)}).Reachable u x} ≤
+      Fintype.card V) : False := by
+  classical
+  let D := G.deleteEdges {s(u, v)}
+  let S : Set V := {x | D.Reachable u x}
+  let W := {x : V // x ∈ S}
+  let r : W := ⟨u, Reachable.refl u⟩
+  let A := G.induce S
+  have hv : v ∉ S := hb
+  have hfree : ¬ HasPow2Cycle A := fun h => hmin.1.2 (HasPow2Cycle.of_induce h)
+  have hcard (x : W) : A.degree x = ((G.neighborFinset x.val).erase v).card := by
+    have hnb : (A.neighborFinset x).image Subtype.val = (G.neighborFinset x.val).erase v := by
+      ext y
+      simp only [Finset.mem_image, SimpleGraph.mem_neighborFinset, Finset.mem_erase, Subtype.exists]
+      constructor
+      · rintro ⟨z, hz, hxz, rfl⟩
+        exact ⟨fun h => hv (h ▸ hz), hxz⟩
+      · rintro ⟨hyv, hxy⟩
+        have hD : D.Adj x.val y := by
+          refine SimpleGraph.deleteEdges_adj.mpr ⟨hxy, ?_⟩
+          simp only [Set.mem_singleton_iff, Sym2.eq_iff]
+          exact fun h => h.elim (fun h => hyv h.2) (fun h => hv (h.1 ▸ x.property))
+        exact ⟨y, x.property.trans hD.reachable, hxy, rfl⟩
+    rw [SimpleGraph.degree, ← hnb, Finset.card_image_of_injective _ Subtype.val_injective]
+  have hcross (x : W) (hx : G.Adj x.val v) : x = r := by
+    by_contra hne
+    have hD : D.Adj x.val v := by
+      refine SimpleGraph.deleteEdges_adj.mpr ⟨hx, ?_⟩
+      simp only [Set.mem_singleton_iff, Sym2.eq_iff]
+      exact fun h => h.elim (fun h => hne (Subtype.ext h.1)) (fun h => hv (h.1 ▸ x.property))
+    exact hv (x.property.trans hD.reachable)
+  have hr : 2 ≤ A.degree r := by
+    have ha := hb.reachable_iff_adj.mp ((minimal_connected G hmin).preconnected u v)
+    have hm : v ∈ G.neighborFinset r.val := by
+      simpa [SimpleGraph.mem_neighborFinset] using ha
+    rw [hcard, Finset.card_erase_of_mem hm]
+    have hd := hmin.1.1 r.val
+    change 2 ≤ G.degree r.val - 1
+    omega
+  have hdeg (x : W) (hx : x ≠ r) : 3 ≤ A.degree x := by
+    have hm : v ∉ G.neighborFinset x.val :=
+      fun h => hx (hcross x (by simpa [SimpleGraph.mem_neighborFinset] using h))
+    rw [hcard, Finset.erase_eq_of_notMem hm]
+    exact hmin.1.1 x.val
+  let T := RootDouble r
+  have : Nonempty T := ⟨doubleRoot r⟩
+  have hlt : Fintype.card T < Fintype.card V := by
+    have ht : Fintype.card T < Fintype.card (W × Bool) := by
+      refine Fintype.card_lt_of_injective_not_surjective Subtype.val Subtype.val_injective ?_
+      intro hs
+      obtain ⟨z, hz⟩ := hs (r, true)
+      have hfalse : true = false :=
+        (hz ▸ z.property : (r, true).1 = r → (r, true).2 = false) rfl
+      cases hfalse
+    apply lt_of_lt_of_le ht
+    rw [Fintype.card_prod, Fintype.card_bool, Nat.mul_comm]
+    exact hsmall
+  have hce : IsCounterexample (doubleGraph A r) :=
+    ⟨double_minDegree A r hr hdeg, fun h => hfree (double_hasPow2Cycle r h)⟩
+  have hcmp := hmin.2 T (doubleGraph A r) hce
+  omega
+
 /-- Lema 5: Todo contraexemplo mínimo não possui pontes (é 2-aresta-conexo). -/
 theorem minimal_bridgeless {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
     (G : SimpleGraph V) [DecidableRel G.Adj]
     (hmin : IsMinimalCounterexample G) (e : Sym2 V) : ¬ G.IsBridge e := by
-  sorry
+  classical
+  induction e using Sym2.ind with | _ u v =>
+  intro hb
+  let D := G.deleteEdges {s(u, v)}
+  let U := {x : V // D.Reachable u x}
+  let W := {x : V // D.Reachable v x}
+  let f : U ⊕ W → V := Sum.elim Subtype.val Subtype.val
+  have hf : Function.Injective f := by
+    intro a b h
+    cases a with
+    | inl a =>
+      cases b with
+      | inl b => exact congrArg Sum.inl (Subtype.ext h)
+      | inr b =>
+        change a.val = b.val at h
+        exact (hb (a.property.trans (h.symm ▸ b.property).symm)).elim
+    | inr a =>
+      cases b with
+      | inl b =>
+        change a.val = b.val at h
+        exact (hb (b.property.trans (h ▸ a.property).symm)).elim
+      | inr b => exact congrArg Sum.inr (Subtype.ext h)
+  have hcard := Fintype.card_le_of_injective f hf
+  rw [Fintype.card_sum] at hcard
+  by_cases hs : 2 * Fintype.card U ≤ Fintype.card V
+  · exact bridge_side_too_small G hmin hb hs
+  · have ht : 2 * Fintype.card W ≤ Fintype.card V := by omega
+    rw [Sym2.eq_swap (a := u) (b := v)] at hb
+    exact bridge_side_too_small G hmin hb (by simpa [W, D, Sym2.eq_swap (a := v) (b := u)] using ht)
 
 /-! ### Rodada 3: Teorema do Cacto de Triângulos (Teorema 7) -/
 
@@ -378,7 +599,6 @@ theorem minimal_no_C5_factor {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
   sorry
 
 /-! ### Rodada 6: Redução à Metade em Bipartidos Não-3-Conexos (Teorema 13) -/
-
 /-- Um grafo possui um corte de vértices de tamanho ≤ 2 se remover um conjunto `S` de tamanho ≤ 2
 torna o subgrafo induzido em `Sᶜ` desconexo. -/
 def HasSmallVertexCut {V : Type*} [Fintype V] (G : SimpleGraph V) : Prop :=
@@ -446,6 +666,122 @@ def IsGraphCovering {U V : Type*} {H : SimpleGraph U} {G : SimpleGraph V}
     (∀ v₁ v₂ : U, H.Adj u v₁ → H.Adj u v₂ → π v₁ = π v₂ → v₁ = v₂) ∧
     (∀ w : V, G.Adj (π u) w → ∃ v : U, H.Adj u v ∧ π v = w)
 
+private theorem walk_dist_le_of_mem_support {V : Type*} {H : SimpleGraph V}
+    {x y : V} (p : H.Walk x y) {u v : V} (hu : u ∈ p.support) (hv : v ∈ p.support) :
+    H.dist u v ≤ p.length := by
+  classical
+  induction p with
+  | @nil z =>
+    have hu' : u = z := by simpa using hu
+    have hv' : v = z := by simpa using hv
+    subst u
+    subst v
+    simp
+  | @cons x z y hxz q ih =>
+    rw [Walk.support_cons, List.mem_cons] at hu hv
+    rcases hu with rfl | hu
+    · let p := q.cons hxz
+      have hv' : v ∈ p.support := by simpa [p, Walk.support_cons] using hv
+      exact (H.dist_le (p.takeUntil v hv')).trans (p.length_takeUntil_le_length hv')
+    · rcases hv with rfl | hv
+      · let p := q.cons hxz
+        have hu' : u ∈ p.support := by simp [p, Walk.support_cons, hu]
+        rw [H.dist_comm]
+        exact (H.dist_le (p.takeUntil u hu')).trans (p.length_takeUntil_le_length hu')
+      · exact (ih hu hv).trans (by simp)
+
+/-- A projeção de um caminho mínimo entre os extremos da primeira colisão de um
+homomorfismo é um ciclo quando o comprimento é pelo menos três. -/
+private theorem shortest_collision_projects_cycle {U V : Type*} {H : SimpleGraph U} {G : SimpleGraph V}
+    (π : H →g G) {x y : U} (p : H.Walk x y) (hshort : p.length = H.dist x y)
+    (h3 : 3 ≤ p.length) (himage : π x = π y)
+    (hsep : ∀ a b, H.Reachable a b → H.dist a b < p.length → π a = π b → a = b) :
+    ∃ (v : V) (q : G.Walk v v), q.IsCycle ∧ q.length = p.length := by
+  let q := (p.map π).copy rfl himage.symm
+  have hlen : q.length = p.length := by simp [q]
+  have hp : ¬ p.Nil := Walk.not_nil_iff_lt_length.mpr (by omega)
+  have hq : ¬ q.Nil := Walk.not_nil_iff_lt_length.mpr (by omega)
+  refine ⟨π x, q, Walk.isCycle_iff_isPath_tail_and_le_length.mpr ⟨?_, hlen.symm ▸ h3⟩, hlen⟩
+  rw [Walk.isPath_def, q.support_tail_of_not_nil hq]
+  simp only [q, Walk.support_copy, Walk.support_map, ← List.map_tail, ← p.support_tail_of_not_nil hp]
+  apply (p.isPath_of_length_eq_dist hshort).tail.support_nodup.map_on
+  intro a ha b hb hab
+  apply hsep a b (Walk.reachable_of_mem_support ha hb) _ hab
+  have hdist := walk_dist_le_of_mem_support p.tail ha hb
+  rw [Walk.length_tail] at hdist
+  omega
+
+/-- Vértices do trapézio de cinco hexágonos, com a borda em ordem cíclica nas
+primeiras 16 posições e os três vértices internos nas últimas posições. -/
+private def hexPatchVertex : Fin 19 → ℤ × ℤ × Bool :=
+  ![(0, 0, false), (0, -1, true), (1, -1, false), (1, -1, true),
+    (2, -1, false), (2, -1, true), (3, -1, false), (3, -1, true),
+    (3, 0, false), (2, 0, true), (2, 1, false), (1, 1, true),
+    (1, 1, false), (0, 1, true), (0, 1, false), (0, 0, true),
+    (1, 0, false), (1, 0, true), (2, 0, false)]
+
+private def hexBoundaryIndex (i : Fin 16) : Fin 19 :=
+  ⟨i.val, i.isLt.trans (by decide)⟩
+
+private instance : DecidableRel hexLattice.Adj := by
+  intro x y
+  unfold hexLattice
+  infer_instance
+
+private def hexPatchBall (x : Fin 19) : ℕ → Finset (Fin 19)
+  | 0 => {x}
+  | n + 1 => (hexPatchBall x n).biUnion fun z =>
+      insert z (Finset.univ.filter fun y => hexLattice.Adj (hexPatchVertex z) (hexPatchVertex y))
+
+private theorem hexPatchBall_walk (x : Fin 19) (n : ℕ) {y : Fin 19}
+    (hy : y ∈ hexPatchBall x n) :
+    ∃ p : hexLattice.Walk (hexPatchVertex x) (hexPatchVertex y), p.length ≤ n := by
+  induction n generalizing y with
+  | zero =>
+    have h : y = x := by simpa [hexPatchBall] using hy
+    subst y
+    exact ⟨.nil, le_rfl⟩
+  | succ n ih =>
+    rw [hexPatchBall, Finset.mem_biUnion] at hy
+    obtain ⟨z, hz, hy⟩ := hy
+    obtain ⟨p, hp⟩ := ih hz
+    simp only [Finset.mem_insert, Finset.mem_filter, Finset.mem_univ, true_and] at hy
+    rcases hy with rfl | hzy
+    · exact ⟨p, by omega⟩
+    · exact ⟨p.concat hzy, by simpa using Nat.succ_le_succ hp⟩
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 3000000 in
+private theorem hexPatchBoundary_walk_bound :
+    ∀ i j : Fin 16, hexBoundaryIndex j ∈ hexPatchBall (hexBoundaryIndex i) 7 := by
+  decide
+
+private theorem hexPatchBoundary_adj :
+    ∀ i j : Fin 16, (cycleGraph 16).Adj i j →
+      hexLattice.Adj (hexPatchVertex (hexBoundaryIndex i)) (hexPatchVertex (hexBoundaryIndex j)) := by
+  decide
+
+private theorem hexPatchBoundary_inj :
+    ∀ i j : Fin 16, hexPatchVertex (hexBoundaryIndex i) =
+      hexPatchVertex (hexBoundaryIndex j) → i = j := by
+  decide
+
+/-- Caso de raio pelo menos 8 do Teorema 17. Se todos os pares a distância no máximo
+7 têm imagens distintas quando distintos, a borda do trapézio projeta-se em um C16. -/
+theorem hex_has_cycle16_of_no_close_collision {V : Type*} (G : SimpleGraph V)
+    (π : hexLattice →g G)
+    (hsep : ∀ x y, hexLattice.Reachable x y → hexLattice.dist x y ≤ 7 →
+      π x = π y → x = y) :
+    ∃ (v : V) (p : G.Walk v v), p.IsCycle ∧ p.length = 16 := by
+  let f : cycleGraph 16 →g hexLattice :=
+    ⟨fun i => hexPatchVertex (hexBoundaryIndex i), fun {i j} h => hexPatchBoundary_adj i j h⟩
+  let g := π.comp f
+  have hg : Function.Injective g := by
+    intro i j hij
+    obtain ⟨p, hp⟩ := hexPatchBall_walk _ 7 (hexPatchBoundary_walk_bound i j)
+    exact hexPatchBoundary_inj i j (hsep _ _ ⟨p⟩ ((hexLattice.dist_le p).trans hp) hij)
+  exact ⟨g 0, (cycleGraph.cycle 13).map g, cycleGraph.isCycle_cycle.map hg, by simp⟩
+
 /-- Teorema 17 (Núcleo Combinatório): Todo grafo finito simples bipartido `G` que admite
 um recobrimento pela rede hexagonal infinita `hexLattice` contém um ciclo simples de
 comprimento `4`, `8` ou `16`. -/
@@ -454,7 +790,50 @@ theorem hex_covering_has_cycle_4_8_16 {V : Type} [Fintype V] [DecidableEq V]
     (hbip : ∃ c : V → Bool, ∀ u v : V, G.Adj u v → c u ≠ c v)
     (π : hexLattice →g G) (hcov : IsGraphCovering π) :
     ∃ (v : V) (p : G.Walk v v), p.IsCycle ∧ (p.length = 4 ∨ p.length = 8 ∨ p.length = 16) := by
-  sorry
+  classical
+  let P (n : ℕ) : Prop := ∃ x y, x ≠ y ∧ π x = π y ∧
+    hexLattice.Reachable x y ∧ hexLattice.dist x y = n
+  by_cases hfar : ∀ x y, hexLattice.Reachable x y → hexLattice.dist x y ≤ 7 →
+      π x = π y → x = y
+  · obtain ⟨v, p, hp, hlen⟩ := hex_has_cycle16_of_no_close_collision G π hfar
+    exact ⟨v, p, hp, Or.inr (Or.inr hlen)⟩
+  push Not at hfar
+  obtain ⟨x, y, hxy, hbound, himage, hne⟩ := hfar
+  have hwitness : P (hexLattice.dist x y) := ⟨x, y, hne, himage, hxy, rfl⟩
+  have hexists : ∃ n, P n := ⟨_, hwitness⟩
+  obtain ⟨u, w, huw, heq, hr, hdist⟩ := Nat.find_spec hexists
+  obtain ⟨p, hp⟩ := hr.exists_walk_length_eq_dist
+  have hl := hp.trans hdist
+  have hle : p.length ≤ 7 := by
+    rw [hl]
+    exact (Nat.find_min' hexists hwitness).trans hbound
+  have hsep (a b) (hrab : hexLattice.Reachable a b) (hab : hexLattice.dist a b < p.length)
+      (he : π a = π b) : a = b := by
+    by_contra hn
+    rw [hl] at hab
+    exact Nat.find_min hexists hab ⟨a, b, hn, he, hrab, rfl⟩
+  have hEven : Even p.length := by
+    obtain ⟨c, hc⟩ := hbip
+    let C : G.Coloring Bool := Coloring.mk c (fun {a b} h => hc a b h)
+    simpa using (C.even_length_iff_congr (p.map π)).mpr (by rw [heq])
+  have h0 : p.length ≠ 0 :=
+    fun h => huw (Walk.exists_length_eq_zero_iff.mp ⟨p, h⟩)
+  have h2 : p.length ≠ 2 := by
+    intro h
+    have h01 := p.adj_getVert_succ (i := 0) (by omega)
+    have h12 := p.adj_getVert_succ (i := 1) (by omega)
+    rw [Walk.getVert_zero] at h01
+    change hexLattice.Adj (p.getVert 1) (p.getVert 2) at h12
+    rw [← h, Walk.getVert_length] at h12
+    exact huw ((hcov (p.getVert 1)).1 u w h01.symm h12 heq)
+  have hcases : p.length = 4 ∨ p.length = 6 := by
+    rw [Nat.even_iff] at hEven
+    omega
+  rcases hcases with h4 | h6
+  · obtain ⟨v, q, hq, hqLen⟩ := shortest_collision_projects_cycle π p hp (by omega) heq hsep
+    exact ⟨v, q, hq, Or.inl (hqLen.trans h4)⟩
+  · -- Raio 6: certificar quatro desvios de comprimento 8 com pares extremos distintos.
+    sorry
 
 /-- Teorema 18 (Núcleo Algébrico — SEM `sorry`): Desigualdade Exata do Fulereno para grafos
 com `δ(G) ≥ 3`, cintura `≥ 5` e livres de `C_8` imersos 2-celularmente em superfície de
@@ -481,37 +860,14 @@ theorem fullerene_euler_inequality {V : Type} [Fintype V] [DecidableEq V]
       have hda : 3 ≤ G.degree a := hdeg a
       have hcard_ins : (insert a s).card = s.card + 1 := by simp [ha]
       have hsum1 : ∑ v ∈ insert a s, G.degree v / 2 =
-          G.degree a / 2 + ∑ v ∈ s, G.degree v / 2 := by simp [ha]
+           G.degree a / 2 + ∑ v ∈ s, G.degree v / 2 := by simp [ha]
       have hsum2 : ∑ v ∈ insert a s, G.degree v =
-          G.degree a + ∑ v ∈ s, G.degree v := by simp [ha]
+           G.degree a + ∑ v ∈ s, G.degree v := by simp [ha]
       have hcard_filt : ((insert a s).filter (fun v => G.degree v = 3)).card =
-          (s.filter (fun v => G.degree v = 3)).card + if G.degree a = 3 then 1 else 0 := by
+           (s.filter (fun v => G.degree v = 3)).card + if G.degree a = 3 then 1 else 0 := by
         by_cases h3 : G.degree a = 3
-        · have h1 : (insert a s).filter (fun v => G.degree v = 3) =
-              insert a (s.filter (fun v => G.degree v = 3)) := by
-            ext x
-            simp only [Finset.mem_filter, Finset.mem_insert]
-            constructor
-            · rintro ⟨rfl | hx, hx3⟩
-              · exact Or.inl rfl
-              · exact Or.inr ⟨hx, hx3⟩
-            · rintro (rfl | ⟨hx, hx3⟩)
-              · exact ⟨Or.inl rfl, h3⟩
-              · exact ⟨Or.inr hx, hx3⟩
-          rw [h1]
-          simp [ha, h3]
-        · have h1 : (insert a s).filter (fun v => G.degree v = 3) =
-              s.filter (fun v => G.degree v = 3) := by
-            ext x
-            simp only [Finset.mem_filter, Finset.mem_insert]
-            constructor
-            · rintro ⟨rfl | hx, hx3⟩
-              · exact absurd hx3 h3
-              · exact ⟨hx, hx3⟩
-            · rintro ⟨hx, hx3⟩
-              exact ⟨Or.inr hx, hx3⟩
-          rw [h1]
-          simp [h3]
+        · simp [Finset.filter_insert, ha, h3]
+        · simp [Finset.filter_insert, h3]
       rw [hcard_ins, hsum1, hsum2, hcard_filt]
       split_ifs <;> omega
   have hmain := hsum_ineq Finset.univ
@@ -537,6 +893,90 @@ theorem planar_girth5_no_C8_card_ge_60 {V : Type} [Fintype V] [DecidableEq V]
   have hle : (Finset.univ.filter (fun v : V => G.degree v = 3)).card ≤ Fintype.card V := by
     rw [← Finset.card_univ]
     exact Finset.card_le_card (Finset.subset_univ _)
+  omega
+
+/-! ### Rodada 9: Terminais de um lado bipartido de um corte cúbico de três arestas -/
+
+/-- Em um grafo bipartido com três vértices de grau 2 e todos os outros de grau 3,
+os três terminais pertencem à mesma parte. -/
+theorem bipartite_three_terminals_same_color {V : Type*} [Fintype V] [DecidableEq V]
+    (A : SimpleGraph V) [DecidableRel A.Adj] (T : Finset V) (hT : T.card = 3)
+    (hdeg : ∀ v : V, A.degree v = if v ∈ T then 2 else 3)
+    (c : V → Bool) (hc : ∀ u v, A.Adj u v → c u ≠ c v) :
+    ∃ b : Bool, ∀ v ∈ T, c v = b := by
+  let S : Finset V := Finset.univ.filter (fun v => c v = false)
+  let R : Finset V := Finset.univ.filter (fun v => c v = true)
+  have hbip : A.IsBipartiteWith (S : Set V) (R : Set V) := by
+    constructor
+    · simp [Set.disjoint_left, S, R]
+    · intro u v huv
+      have h := hc u v huv
+      cases hu : c u <;> cases hv : c v <;> simp_all [S, R]
+  have hsum := A.isBipartiteWith_sum_degrees_eq hbip
+  have hbalance (s : Finset V) :
+      3 * s.card = (∑ v ∈ s, A.degree v) + (s.filter (· ∈ T)).card := by
+    induction s using Finset.induction_on with
+    | empty => simp
+    | @insert a s ha ih =>
+      by_cases ht : a ∈ T
+      · simp [Finset.filter_insert, ha, hdeg a, ht]
+        omega
+      · simp [Finset.filter_insert, ha, hdeg a, ht]
+        omega
+  have hs : S.filter (· ∈ T) = T.filter (fun v => c v = false) := by
+    ext v
+    simp [S, and_comm]
+  have hr : R.filter (· ∈ T) = T.filter (fun v => c v = true) := by
+    ext v
+    simp [R, and_comm]
+  have hthree : (S.filter (· ∈ T)).card + (R.filter (· ∈ T)).card = 3 := by
+    rw [hs, hr, ← hT]
+    have hneg : (T.filter (fun v => ¬ c v = false)) = T.filter (fun v => c v = true) := by
+      ext v
+      cases c v <;> simp
+    rw [← hneg]
+    exact Finset.card_filter_add_card_filter_not (fun v => c v = false)
+  have hS := hbalance S
+  have hR := hbalance R
+  change (∑ v ∈ S, A.degree v) = ∑ w ∈ R, A.degree w at hsum
+  have hzero : (S.filter (· ∈ T)).card = 0 ∨ (R.filter (· ∈ T)).card = 0 := by
+    omega
+  rw [hs, hr] at hzero
+  rcases hzero with hzero | hzero
+  · refine ⟨true, fun v hv => ?_⟩
+    have h := Finset.filter_eq_empty_iff.mp (Finset.card_eq_zero.mp hzero) hv
+    cases hcv : c v <;> simp_all
+  · refine ⟨false, fun v hv => ?_⟩
+    have h := Finset.filter_eq_empty_iff.mp (Finset.card_eq_zero.mp hzero) hv
+    cases hcv : c v <;> simp_all
+
+private theorem walk_color_parity {V : Type*} {G : SimpleGraph V}
+    (c : V → Bool) {u v : V} (p : G.Walk u v) :
+    (p.length + p.darts.countP (fun d => c d.fst == c d.snd)) % 2 =
+      if c u = c v then 0 else 1 := by
+  induction p with
+  | nil => simp
+  | @cons u w v h q ih =>
+    cases hu : c u <;> cases hw : c w <;> cases hv : c v <;>
+      simp [Walk.darts_cons, hu, hw, hv] at ih ⊢ <;> omega
+
+/-- Um passeio fechado de comprimento par tem um número par de ocorrências de
+arestas cujos extremos recebem a mesma cor. -/
+theorem even_closed_walk_same_color_edges {V : Type*} {G : SimpleGraph V}
+    (c : V → Bool) {u : V} (p : G.Walk u u) (hp : p.length % 2 = 0) :
+    p.darts.countP (fun d => c d.fst == c d.snd) % 2 = 0 := by
+  have h : (p.length + p.darts.countP (fun d => c d.fst == c d.snd)) % 2 = 0 := by
+    simpa using walk_color_parity c p
+  omega
+
+/-- Dois caminhos de comprimento par que fecham um ciclo diádico com duas arestas
+de junção têm resíduos distintos módulo 4. -/
+theorem two_join_edges_dyadic_residues {a b k : ℕ} (hk : 2 ≤ k)
+    (ha : a % 2 = 0) (hb : b % 2 = 0) (hlen : a + b + 2 = 2 ^ k) :
+    (a % 4 = 0 ∧ b % 4 = 2) ∨ (a % 4 = 2 ∧ b % 4 = 0) := by
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hk
+  rw [pow_add] at hlen
+  norm_num at hlen
   omega
 
 end Erdos64
