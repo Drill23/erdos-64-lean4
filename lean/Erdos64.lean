@@ -527,14 +527,13 @@ theorem cycle_chord_split {V : Type*} {H : SimpleGraph V} {x : V} (c : H.Walk x 
     rw [Walk.edges_take] at hm
     exact List.mem_of_mem_take hm
   · simp [Walk.take_length]
-    <;> omega
+    omega
   · rw [Walk.cons_isCycle_iff]
     refine ⟨hc.isPath_drop hi0, fun hm => hnot ?_⟩
     rw [Walk.edges_drop] at hm
     rw [Sym2.eq_swap]
     exact List.mem_of_mem_drop hm
   · simp [Walk.drop_length]
-    <;> omega
 
 /-- Corte por ápice externo: um vértice `w` fora do ciclo adjacente a `x` e a `c.getVert i`
 divide o ciclo em dois ciclos de comprimentos `i + 2` e `c.length - i + 2`. -/
@@ -560,7 +559,7 @@ theorem cycle_apex_split {V : Type*} {H : SimpleGraph V} {x w : V} (c : H.Walk x
       · exact hne h
     · exact hwt (Walk.snd_mem_support_of_mem_edges _ he)
   · simp [Walk.take_length]
-    <;> omega
+    omega
   · rw [Walk.cons_isCycle_iff, Walk.cons_isPath_iff]
     refine ⟨⟨hc.isPath_drop hi0, hwd⟩, fun hm => ?_⟩
     rw [Walk.edges_cons, List.mem_cons] at hm
@@ -571,7 +570,6 @@ theorem cycle_apex_split {V : Type*} {H : SimpleGraph V} {x w : V} (c : H.Walk x
       · exact hne h.symm
     · exact hwd (Walk.snd_mem_support_of_mem_edges _ he)
   · simp [Walk.drop_length]
-    <;> omega
 
 
 /-- Desvios múltiplos (caso C): se cada aresta do caminho `P` tem um ápice fora de `C`, e um
