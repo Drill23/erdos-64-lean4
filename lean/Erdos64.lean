@@ -650,6 +650,131 @@ theorem path_multi_detour {V : Type*} {G : SimpleGraph V} (C : Set V) (E : Set (
           · exact Or.inl (by simp [h1])
           · exact Or.inr ⟨h1, a', b', by simp [he], h2, h3⟩
 
+
+/-- Índice intermediário: um vértice do ciclo, distinto da base `x` e não vizinho de `x` no
+ciclo, ocupa uma posição `i` com `2 ≤ i ≤ |c| - 2`. -/
+theorem cycle_mid_index {V : Type*} {H : SimpleGraph V} {x y : V} (c : H.Walk x x)
+    (hc : c.IsCycle) (hy : y ∈ c.support) (hyx : y ≠ x) (hnot : s(y, x) ∉ c.edges) :
+    ∃ i, 2 ≤ i ∧ i + 2 ≤ c.length ∧ c.getVert i = y := by
+  obtain ⟨i, hi, hle⟩ := Walk.mem_support_iff_exists_getVert.mp hy
+  refine ⟨i, ?_, ?_, hi⟩
+  · by_contra h
+    have h01 : i = 0 ∨ i = 1 := by omega
+    rcases h01 with rfl | rfl
+    · rw [Walk.getVert_zero] at hi
+      exact hyx hi.symm
+    · apply hnot
+      rw [← hi, Sym2.eq_swap]
+      exact Walk.mk_start_snd_mem_edges hc.not_nil
+  · by_contra h
+    have h01 : i = c.length ∨ i = c.length - 1 := by omega
+    rcases h01 with rfl | rfl
+    · rw [Walk.getVert_length] at hi
+      exact hyx hi.symm
+    · apply hnot
+      rw [← hi]
+      exact Walk.mk_penultimate_end_mem_edges hc.not_nil
+
+/-- Sem cordas na base: num ciclo de comprimento `N ≥ 5` sem ciclos de comprimento em `[4, N)`,
+não existe corda partindo da base. -/
+theorem cycle_base_no_chord {V : Type*} {H : SimpleGraph V} {x y : V} (c : H.Walk x x)
+    (hc : c.IsCycle) {N : ℕ} (hlen : c.length = N) (h5 : 5 ≤ N)
+    (hforb : ∀ (z : V) (q : H.Walk z z), q.IsCycle → 4 ≤ q.length → q.length < N → False)
+    (hy : y ∈ c.support) (hyx : y ≠ x) (hadj : H.Adj y x) (hnot : s(y, x) ∉ c.edges) : False := by
+  obtain ⟨i, hi2, hin, rfl⟩ := cycle_mid_index c hc hy hyx hnot
+  obtain ⟨⟨_, q1, hq1, hl1⟩, ⟨_, q2, hq2, hl2⟩⟩ :=
+    cycle_chord_split c hc (i := i) (by omega) (by omega) hadj hnot
+  by_cases h : 4 ≤ i + 1
+  · exact hforb _ q1 hq1 (by omega) (by omega)
+  · exact hforb _ q2 hq2 (by omega) (by omega)
+
+/-- Sem ápice externo na base: um vértice `w` fora do ciclo não pode ser vizinho da base e de
+um vértice do ciclo que não seja vizinho da base no ciclo. -/
+theorem cycle_base_no_apex {V : Type*} {H : SimpleGraph V} {x y w : V} (c : H.Walk x x)
+    (hc : c.IsCycle) {N : ℕ} (hlen : c.length = N) (h5 : 5 ≤ N)
+    (hforb : ∀ (z : V) (q : H.Walk z z), q.IsCycle → 4 ≤ q.length → q.length < N → False)
+    (hw : w ∉ c.support) (hy : y ∈ c.support) (hyx : y ≠ x)
+    (h1 : H.Adj y w) (h2 : H.Adj w x) (hnot : s(y, x) ∉ c.edges) : False := by
+  obtain ⟨i, hi2, hin, rfl⟩ := cycle_mid_index c hc hy hyx hnot
+  obtain ⟨⟨_, q1, hq1, hl1⟩, ⟨_, q2, hq2, hl2⟩⟩ :=
+    cycle_apex_split c hc (i := i) (by omega) (by omega) hyx hw h1 h2
+  by_cases h : i + 2 < N
+  · exact hforb _ q1 hq1 (by omega) (by omega)
+  · exact hforb _ q2 hq2 (by omega) (by omega)
+
+/-- Versão global (via rotação) da ausência de cordas. -/
+theorem cycle_no_chord {V : Type*} [DecidableEq V] {H : SimpleGraph V} {x u y : V}
+    (c : H.Walk x x) (hc : c.IsCycle) {N : ℕ} (hlen : c.length = N) (h5 : 5 ≤ N)
+    (hforb : ∀ (z : V) (q : H.Walk z z), q.IsCycle → 4 ≤ q.length → q.length < N → False)
+    (hu : u ∈ c.support) (hy : y ∈ c.support) (hyu : y ≠ u) (hadj : H.Adj y u)
+    (hnot : s(y, u) ∉ c.edges) : False :=
+  cycle_base_no_chord (c.rotate u hu) (hc.rotate hu) (by simpa using hlen) h5 hforb
+    ((c.mem_support_rotate_iff u hu).mpr hy) hyu hadj
+    (by rwa [(c.rotate_edges u hu).mem_iff])
+
+/-- Versão global (via rotação) da ausência de ápice externo. -/
+theorem cycle_no_apex {V : Type*} [DecidableEq V] {H : SimpleGraph V} {x u y w : V}
+    (c : H.Walk x x) (hc : c.IsCycle) {N : ℕ} (hlen : c.length = N) (h5 : 5 ≤ N)
+    (hforb : ∀ (z : V) (q : H.Walk z z), q.IsCycle → 4 ≤ q.length → q.length < N → False)
+    (hw : w ∉ c.support) (hu : u ∈ c.support) (hy : y ∈ c.support) (hyu : y ≠ u)
+    (h1 : H.Adj y w) (h2 : H.Adj w u) (hnot : s(y, u) ∉ c.edges) : False :=
+  cycle_base_no_apex (c.rotate u hu) (hc.rotate hu) (by simpa using hlen) h5 hforb
+    (by rwa [c.mem_support_rotate_iff u hu]) ((c.mem_support_rotate_iff u hu).mpr hy) hyu h1 h2
+    (by rwa [(c.rotate_edges u hu).mem_iff])
+
+/-- Num ciclo de comprimento `≥ 4`, os dois vizinhos da base no ciclo não são adjacentes
+pelo ciclo. -/
+theorem cycle_snd_penultimate_not_edge {V : Type*} {H : SimpleGraph V} {x : V}
+    (d : H.Walk x x) (hd : d.IsCycle) (h4 : 4 ≤ d.length) :
+    s(d.snd, d.penultimate) ∉ d.edges := by
+  intro hm
+  have hE : d.edges = s(x, d.snd) :: d.tail.edges := by
+    conv_lhs => rw [← d.cons_tail_eq hd.not_nil]
+    rw [Walk.edges_cons]
+  rw [hE, List.mem_cons] at hm
+  have hinj := hd.getVert_injOn
+  rcases hm with he | he
+  · rw [Sym2.eq_iff] at he
+    rcases he with ⟨h1, _⟩ | ⟨_, h2⟩
+    · have : (1 : ℕ) = d.length := hinj (show 1 ≤ 1 ∧ 1 ≤ d.length from ⟨le_rfl, by omega⟩)
+        (show 1 ≤ d.length ∧ d.length ≤ d.length from ⟨by omega, le_rfl⟩)
+        (by rw [Walk.getVert_length]; exact h1)
+      omega
+    · have : d.length - 1 = d.length := hinj
+        (show 1 ≤ d.length - 1 ∧ d.length - 1 ≤ d.length from ⟨by omega, by omega⟩)
+        (show 1 ≤ d.length ∧ d.length ≤ d.length from ⟨by omega, le_rfl⟩)
+        (by rw [Walk.getVert_length]; exact h2)
+      omega
+  · have h3 := hd.isPath_tail.eq_snd_of_mem_edges he
+    have h4' : d.tail.snd = d.getVert 2 := by
+      show (d.drop 1).getVert 1 = _
+      rw [Walk.drop_getVert]
+    rw [h4'] at h3
+    have : d.length - 1 = 2 := hinj
+      (show 1 ≤ d.length - 1 ∧ d.length - 1 ≤ d.length from ⟨by omega, by omega⟩)
+      (show 1 ≤ 2 ∧ 2 ≤ d.length from ⟨by omega, by omega⟩) h3
+    omega
+
+/-- Num ciclo de comprimento `≥ 4` não há três vértices dois a dois ligados por arestas do
+ciclo. -/
+theorem cycle_no_triangle_of_edges {V : Type*} [DecidableEq V] {H : SimpleGraph V} {x a b z : V}
+    (c : H.Walk x x) (hc : c.IsCycle) (h4 : 4 ≤ c.length) (ha : a ∈ c.support)
+    (hbz : b ≠ z) (hab : s(a, b) ∈ c.edges) (haz : s(a, z) ∈ c.edges)
+    (hbz' : s(b, z) ∈ c.edges) : False := by
+  let d := c.rotate a ha
+  have hd : d.IsCycle := hc.rotate ha
+  have hmem : ∀ e, e ∈ d.edges ↔ e ∈ c.edges := fun e => (c.rotate_edges a ha).mem_iff
+  have hd4 : 4 ≤ d.length := by simpa [d] using h4
+  have hb := hd.isPath_tail.eq_snd_or_eq_penultimate_of_end_mem_edges ((hmem _).mpr hab)
+  have hz := hd.isPath_tail.eq_snd_or_eq_penultimate_of_end_mem_edges ((hmem _).mpr haz)
+  have hK := cycle_snd_penultimate_not_edge d hd hd4
+  have hbz'' := (hmem _).mpr hbz'
+  rcases hb with rfl | rfl <;> rcases hz with rfl | rfl
+  · exact hbz rfl
+  · exact hK hbz''
+  · exact hK (by rw [Sym2.eq_swap]; exact hbz'')
+  · exact hbz rfl
+
 /-- Teorema 7: Em qualquer grafo livre de C_{2^k}, `G_Δ` não possui ciclos de comprimento ≥ 4. -/
 theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
     (G : SimpleGraph V) (hfree : ¬ HasPow2Cycle G) :
