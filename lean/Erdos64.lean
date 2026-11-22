@@ -481,6 +481,39 @@ def triangleSubgraph {V : Type*} (G : SimpleGraph V) : SimpleGraph V where
     rintro v ⟨hvv, _⟩
     exact G.ne_of_adj hvv rfl⟩
 
+
+/-! ### Lemas auxiliares do Teorema 7 (Quest, ramo `quest-provas`) -/
+
+theorem triangleSubgraph_le {V : Type*} (G : SimpleGraph V) : triangleSubgraph G ≤ G :=
+  fun _ _ h => h.1
+
+/-- Um ciclo de comprimento 4 já é um `C_{2^2}`. -/
+theorem hasPow2Cycle_of_cycle_four {V : Type*} {G : SimpleGraph V} {v : V}
+    (p : G.Walk v v) (hp : p.IsCycle) (h4 : p.length = 4) : HasPow2Cycle G :=
+  ⟨v, p, 2, le_rfl, hp, by simpa using h4⟩
+
+/-- Desvio por um ápice: trocar a primeira aresta `v a` de um ciclo por `v w a`, com `w` fora do
+ciclo, gera um ciclo de comprimento uma unidade maior. -/
+theorem cycle_detour_cons {V : Type*} {G : SimpleGraph V} {v a w : V}
+    (h : G.Adj v a) (q : G.Walk a v) (hc : (Walk.cons h q).IsCycle)
+    (hvw : G.Adj v w) (hwa : G.Adj w a) (hw : w ∉ (Walk.cons h q).support) :
+    (Walk.cons hvw (Walk.cons hwa q)).IsCycle ∧
+      (Walk.cons hvw (Walk.cons hwa q)).length = (Walk.cons h q).length + 1 := by
+  rw [Walk.cons_isCycle_iff] at hc
+  have hwq : w ∉ q.support := fun hm => hw (by simp [hm])
+  have hwv : w ≠ v := fun e => hw (by simp [e])
+  refine ⟨?_, by simp⟩
+  rw [Walk.cons_isCycle_iff, Walk.cons_isPath_iff]
+  refine ⟨⟨hc.1, hwq⟩, ?_⟩
+  intro hm
+  rw [Walk.edges_cons, List.mem_cons] at hm
+  rcases hm with he | he
+  · rw [Sym2.eq_iff] at he
+    rcases he with ⟨h1, _⟩ | ⟨h1, h2⟩
+    · exact hwv h1.symm
+    · exact hwv h1.symm
+  · exact hwq (Walk.snd_mem_support_of_mem_edges q he)
+
 /-- Teorema 7: Em qualquer grafo livre de C_{2^k}, `G_Δ` não possui ciclos de comprimento ≥ 4. -/
 theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
     (G : SimpleGraph V) (hfree : ¬ HasPow2Cycle G) :
