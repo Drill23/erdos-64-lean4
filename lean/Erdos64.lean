@@ -1,24 +1,26 @@
 import Mathlib
 
 /-!
-# Projeto Erdős #64 — Formalização em Lean 4 (`Checkpoint v1.6`)
+# Projeto Erdős #64 — Formalização em Lean 4 (`Checkpoint v1.7`)
 
-Sincronizado com `README.md` e `Erdos64_lean.md` (Pós-Rodada 11, Progresso `25% / 100%`).
-Lean `v4.36.0` / Mathlib `v4.36.0`: 0 erros, 0 avisos de linter e 7 avisos de `sorry`.
+Sincronizado com `README.md` e `Erdos64_lean.md` (Pós-Rodada 12, Progresso `25% / 100%`).
+Lean `v4.36.0` / Mathlib `v4.36.0`: 0 erros, 0 avisos de linter e 6 avisos de `sorry`.
 
-21 teoremas públicos verificados sem dependência de `sorry`:
+24 teoremas públicos verificados sem dependência de `sorry`:
 - `HasPow2Cycle.map`, `HasPow2Cycle.mono`, `HasPow2Cycle.of_induce`
 - `no_two_common_neighbors`, `common_neighbors_le_one`, `triangles_edge_disjoint`
 - `minimal_connected`, `high_degree_independent`, `no_L3_vertices`
 - `fullerene_euler_inequality`, `planar_girth5_no_C8_card_ge_60`
 - `minimal_bridgeless`
 - `bipartite_three_terminals_same_color`, `even_closed_walk_same_color_edges`,
-  `two_join_edges_dyadic_residues` (lemas auxiliares do Teorema 19)
+   `two_join_edges_dyadic_residues` (lemas auxiliares do Teorema 19)
 - `hex_has_cycle16_of_no_close_collision`, `hex_local_injective_has_cycle_4_8_16`,
-  `hex_covering_has_cycle_4_8_16` (núcleo combinatório completo do Teorema 17)
+   `hex_covering_has_cycle_4_8_16` (núcleo combinatório completo do Teorema 17)
 - `euler_boundary_deficit_bound` (núcleo algébrico do Teorema 20)
 - `triangle_cactus_no_long_cycle` (Teorema 7)
 - `single_join_edge_dyadic_residues` (núcleo aritmético do caso de uma junção do Teorema 21)
+- `minimal_edge_dyadic_successor`, `minimal_not_bipartite`, `minimal_bipartite_cubicity`
+  (contração de arestas fora de triângulos e Teorema 10b)
 -/
 
 open SimpleGraph
@@ -681,7 +683,6 @@ private theorem expand_triangle_path {V : Type*} {G : SimpleGraph V} {a b : V}
       · exact Or.inl List.mem_cons_self
       · exact Or.inr hztip
       · exact (hs u hu).imp (List.mem_cons_of_mem _) (htails u)
-
 private theorem pow_two_in_cycle_interval {n : ℕ} (hn : 4 ≤ n) :
     ∃ k : ℕ, 2 ≤ k ∧ n ≤ 2 ^ k ∧ 2 ^ k < 2 * n := by
   let k := Nat.log 2 (n - 1)
@@ -868,13 +869,284 @@ theorem minimal_triangle_free_cubicity {V : Type} [Fintype V] [Nonempty V] [Deci
     8 * Fintype.card V ≤ 11 * (Finset.univ.filter (fun v : V => G.degree v = 3)).card := by
   sorry
 
+/-! ### Rodada 12: Contração de uma aresta fora de triângulos -/
+
+private abbrev ContractVerts {V : Type*} (v : V) := {x : V // x ≠ v}
+
+private def contractEdge {V : Type*} (G : SimpleGraph V) {v : V}
+    (r : ContractVerts v) : SimpleGraph (ContractVerts v) where
+  Adj a b := a ≠ b ∧
+    (G.Adj a.val b.val ∨ a = r ∧ G.Adj v b.val ∨ b = r ∧ G.Adj a.val v)
+  symm := ⟨by
+    rintro a b ⟨hab, h | ⟨ha, h⟩ | ⟨hb, h⟩⟩
+    · exact ⟨hab.symm, Or.inl h.symm⟩
+    · exact ⟨hab.symm, Or.inr (Or.inr ⟨ha, h.symm⟩)⟩
+    · exact ⟨hab.symm, Or.inr (Or.inl ⟨hb, h.symm⟩)⟩⟩
+  loopless := ⟨fun _ h => h.1 rfl⟩
+
+private theorem contractEdge_adj_away {V : Type*} {G : SimpleGraph V} {v : V}
+    {r a b : ContractVerts v} (ha : a ≠ r) (hb : b ≠ r)
+    (h : (contractEdge G r).Adj a b) : G.Adj a.val b.val := by
+  rcases h.2 with h | ⟨h, _⟩ | ⟨h, _⟩
+  · exact h
+  · exact (ha h).elim
+  · exact (hb h).elim
+
+private theorem contractEdge_adj_root {V : Type*} {G : SimpleGraph V} {v : V}
+    {r a : ContractVerts v} (h : (contractEdge G r).Adj r a) :
+    G.Adj r.val a.val ∨ G.Adj v a.val := by
+  rcases h.2 with h' | ⟨_, h'⟩ | ⟨ha, _⟩
+  · exact Or.inl h'
+  · exact Or.inr h'
+  · exact (h.1 ha.symm).elim
+
+private theorem contractEdge_minDegree {V : Type*} [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] {v : V} (r : ContractVerts v)
+    [Fintype (ContractVerts v)] [DecidableRel (contractEdge G r).Adj]
+    (he : G.Adj r.val v) (hcommon : ∀ z, G.Adj r.val z → ¬ G.Adj v z)
+    (hdeg : ∀ x, 3 ≤ G.degree x) (x : ContractVerts v) :
+    3 ≤ (contractEdge G r).degree x := by
+  classical
+  let D := contractEdge G r
+  let collapse (a : V) : ContractVerts v := if ha : a = v then r else ⟨a, ha⟩
+  have collapse_of_ne {a : V} (ha : a ≠ v) : (collapse a).val = a := by
+    simp [collapse, ha]
+  have collapse_v : collapse v = r := by simp [collapse]
+  change 3 ≤ D.degree x
+  by_cases hx : x = r
+  · subst x
+    let S := (G.neighborFinset v).erase r.val
+    have hrv : r.val ∈ G.neighborFinset v := by simpa using he.symm
+    have hS : S.Nonempty := by
+      apply Finset.card_pos.mp
+      rw [Finset.card_erase_of_mem hrv]
+      have hd := hdeg v
+      change 0 < G.degree v - 1
+      omega
+    obtain ⟨z, hz⟩ := hS
+    have hzAdj : G.Adj v z := by simpa using (Finset.mem_erase.mp hz).2
+    have hzv : z ≠ v := (G.ne_of_adj hzAdj).symm
+    let T := (G.neighborFinset r.val).erase v
+    let U := insert z T
+    have hzT : z ∉ T := fun h => hcommon z (by simpa using (Finset.mem_erase.mp h).2) hzAdj
+    have hU (y : V) (hy : y ∈ U) : y ≠ v ∧ y ≠ r.val ∧
+        (G.Adj r.val y ∨ G.Adj v y) := by
+      rcases Finset.mem_insert.mp hy with rfl | hy
+      · exact ⟨hzv, (Finset.mem_erase.mp hz).1, Or.inr hzAdj⟩
+      · have hya : G.Adj r.val y := by simpa using (Finset.mem_erase.mp hy).2
+        exact ⟨(Finset.mem_erase.mp hy).1, (G.ne_of_adj hya).symm, Or.inl hya⟩
+    have hsub : U ⊆ (D.neighborFinset r).image Subtype.val := by
+      intro y hy
+      obtain ⟨hyv, hyr, hya | hya⟩ := hU y hy
+      · exact Finset.mem_image.mpr ⟨⟨y, hyv⟩, by
+          rw [SimpleGraph.mem_neighborFinset]
+          exact ⟨fun h => hyr (congrArg Subtype.val h).symm, Or.inl hya⟩, rfl⟩
+      · exact Finset.mem_image.mpr ⟨⟨y, hyv⟩, by
+          rw [SimpleGraph.mem_neighborFinset]
+          exact ⟨fun h => hyr (congrArg Subtype.val h).symm, Or.inr (Or.inl ⟨rfl, hya⟩)⟩, rfl⟩
+    have hcard := Finset.card_le_card hsub
+    rw [Finset.card_image_of_injective _ Subtype.val_injective] at hcard
+    have hv : v ∈ G.neighborFinset r.val := by simpa using he
+    rw [show U = insert z T from rfl, Finset.card_insert_of_notMem hzT,
+      show T = (G.neighborFinset r.val).erase v from rfl, Finset.card_erase_of_mem hv] at hcard
+    change G.degree r.val - 1 + 1 ≤ D.degree r at hcard
+    have hd := hdeg r.val
+    omega
+  · let f : G.neighborSet x.val → D.neighborSet x := fun a =>
+      ⟨collapse a.val, by
+        change D.Adj x (collapse a.val)
+        have haAdj : G.Adj x.val a.val := a.property
+        by_cases ha : a.val = v
+        · rw [ha, collapse_v]
+          rw [ha] at haAdj
+          exact ⟨hx, Or.inr (Or.inr ⟨rfl, haAdj⟩)⟩
+        · refine ⟨fun h => G.ne_of_adj a.property ?_, Or.inl ?_⟩
+          · simpa only [collapse_of_ne ha] using congrArg Subtype.val h
+          · simpa only [collapse_of_ne ha] using haAdj⟩
+    have hf : Function.Injective f := by
+      intro a b hab
+      have hc : collapse a.val = collapse b.val :=
+        congrArg (fun z : D.neighborSet x => z.val) hab
+      apply Subtype.ext
+      by_cases ha : a.val = v
+      · by_cases hb : b.val = v
+        · exact ha.trans hb.symm
+        · have hbr : b.val = r.val := by
+            rw [ha, collapse_v] at hc
+            simpa only [collapse_of_ne hb] using (congrArg Subtype.val hc).symm
+          exact (hcommon x.val (hbr ▸ b.property).symm (ha ▸ a.property).symm).elim
+      · by_cases hb : b.val = v
+        · have har : a.val = r.val := by
+            rw [hb, collapse_v] at hc
+            simpa only [collapse_of_ne ha] using congrArg Subtype.val hc
+          exact (hcommon x.val (har ▸ a.property).symm (hb ▸ b.property).symm).elim
+        · simpa only [collapse_of_ne ha, collapse_of_ne hb] using congrArg Subtype.val hc
+    have hcard := Fintype.card_le_of_injective f hf
+    rw [G.card_neighborSet_eq_degree, D.card_neighborSet_eq_degree] at hcard
+    exact (hdeg x.val).trans hcard
+
+private theorem contractEdge_transfer {V : Type*} {G : SimpleGraph V} {v : V}
+    {r a b : ContractVerts v} (p : (contractEdge G r).Walk a b) (hr : r ∉ p.support) :
+    ∀ e, e ∈ p.edges → e ∈ (G.comap (Subtype.val : ContractVerts v → V)).edgeSet := by
+  intro e he
+  induction e using Sym2.ind with | _ x y =>
+  have hx : x ≠ r := fun h => hr (h ▸ p.fst_mem_support_of_mem_edges he)
+  have hy : y ≠ r := fun h => hr (h ▸ p.snd_mem_support_of_mem_edges he)
+  exact contractEdge_adj_away hx hy (p.edges_subset_edgeSet he)
+
+private theorem contractEdge_lift_cycle {V : Type*} {G : SimpleGraph V} {v : V}
+    {r : ContractVerts v} (he : G.Adj r.val v)
+    (h : HasPow2Cycle (contractEdge G r)) :
+    HasPow2Cycle G ∨ ∃ (p : G.Walk r.val r.val) (k : ℕ),
+      2 ≤ k ∧ p.IsCycle ∧ p.length = 2 ^ k + 1 ∧ s(r.val, v) ∈ p.edges := by
+  classical
+  obtain ⟨x, p, k, hk, hp, hlen⟩ := h
+  let A := G.comap (Subtype.val : ContractVerts v → V)
+  let f : A →g G := ⟨Subtype.val, fun h => h⟩
+  by_cases hr : r ∈ p.support
+  · let q := p.rotate r hr
+    have hq : q.IsCycle := hp.rotate hr
+    have hqlen : q.length = 2 ^ k := by simpa [q] using hlen
+    have hfour : 4 ≤ q.length := by
+      rw [hqlen]
+      exact Nat.pow_le_pow_right (by decide : 0 < 2) hk
+    have ht : ¬ q.tail.Nil := Walk.not_nil_iff_lt_length.mpr (by rw [Walk.length_tail]; omega)
+    let t := q.tail.dropLast
+    have htr : r ∉ t.support := by
+      have hn := hq.isPath_tail.support_nodup
+      rw [← q.tail.support_dropLast_concat ht] at hn
+      exact fun hm => List.disjoint_of_nodup_append hn hm (by simp)
+    have hleft : (contractEdge G r).Adj r q.snd := q.adj_snd hq.not_nil
+    have hright : (contractEdge G r).Adj r q.tail.penultimate :=
+      (q.tail.adj_penultimate ht).symm
+    let w := (t.transfer A (contractEdge_transfer t htr)).map f
+    have hw : w.IsPath :=
+      ((Walk.isPath_transfer _).mpr hq.isPath_tail.dropLast).map Subtype.val_injective
+    have hwl : w.length + 2 = 2 ^ k := by
+      change ((t.transfer A (contractEdge_transfer t htr)).map f).length + 2 = _
+      rw [Walk.length_map, Walk.length_transfer]
+      change q.tail.dropLast.length + 2 = _
+      rw [Walk.length_dropLast, Walk.length_tail]
+      omega
+    have hws : w.support = t.support.map Subtype.val := by
+      change ((t.transfer A (contractEdge_transfer t htr)).map f).support = _
+      rw [Walk.support_map, Walk.support_transfer]
+      rfl
+    have hwr : r.val ∉ w.support := by
+      intro hm
+      rw [hws] at hm
+      obtain ⟨z, hz, heq⟩ := List.mem_map.mp hm
+      exact htr ((Subtype.ext heq : z = r) ▸ hz)
+    have hwv : v ∉ w.support := by
+      intro hm
+      rw [hws] at hm
+      obtain ⟨z, _, heq⟩ := List.mem_map.mp hm
+      exact z.property heq
+    have hs (y : V) (ha : G.Adj y q.snd.val)
+        (hb : G.Adj y q.tail.penultimate.val) (hy : y ∉ w.support) :
+        HasPow2Cycle G := by
+      let path := w.concat hb.symm
+      have hpath : path.IsPath := hw.concat hy _
+      have hlpath : path.length = w.length + 1 := Walk.length_concat _ _
+      exact ⟨y, Walk.cons ha path, k, hk, close_simple_path path hpath (by omega) ha,
+        by rw [Walk.length_cons, hlpath]; omega⟩
+    have hm {y z : V} (ha : G.Adj y q.snd.val)
+        (hb : G.Adj z q.tail.penultimate.val) (hz : z ∉ w.support)
+        (hy : y ∉ w.support) (hyz : G.Adj z y) :
+        ∃ c : G.Walk y y, c.IsCycle ∧ c.length = 2 ^ k + 1 ∧ s(z, y) ∈ c.edges := by
+      let path := w.concat hb.symm
+      let extPath := path.concat hyz
+      have hp₁ : path.IsPath := hw.concat hz _
+      have hy' : y ∉ path.support := by
+        rw [Walk.support_concat]
+        simp [hy, G.ne_of_adj hyz.symm]
+      have hp₂ : extPath.IsPath := hp₁.concat hy' _
+      have hlpath : extPath.length = w.length + 2 := by simp [extPath, path]
+      refine ⟨Walk.cons ha extPath, close_simple_path extPath hp₂ (by omega) ha, ?_, ?_⟩
+      · rw [Walk.length_cons, hlpath]
+        omega
+      · simp [extPath, Walk.edges_concat]
+    rcases contractEdge_adj_root hleft with ha | ha <;>
+      rcases contractEdge_adj_root hright with hb | hb
+    · exact Or.inl (hs r.val ha hb hwr)
+    · obtain ⟨c, hc, hl, hm⟩ := hm ha hb hwv hwr he.symm
+      exact Or.inr ⟨c, k, hk, hc, hl, Sym2.eq_swap ▸ hm⟩
+    · obtain ⟨c, hc, hl, hm⟩ := hm ha hb hwr hwv he
+      have hv : r.val ∈ c.support := c.fst_mem_support_of_mem_edges hm
+      exact Or.inr ⟨c.rotate r.val hv, k, hk, hc.rotate hv,
+        (c.length_rotate r.val hv).trans hl, (c.rotate_edges r.val hv).perm.mem_iff.mpr hm⟩
+    · exact Or.inl (hs v ha hb hwv)
+  · let w := p.transfer A (contractEdge_transfer p hr)
+    have hw : w.IsCycle := (Walk.isCycle_transfer _).mpr hp
+    exact Or.inl ⟨x.val, w.map f, k, hk, hw.map Subtype.val_injective, by simpa [w] using hlen⟩
+
+/-- Num contraexemplo mínimo global, cada aresta fora de triângulos pertence
+a um ciclo de comprimento `2^k + 1`, com `k ≥ 2`. -/
+theorem minimal_edge_dyadic_successor {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] (hmin : IsMinimalCounterexample G)
+    {u v : V} (he : G.Adj u v) (hcommon : ∀ z, G.Adj u z → ¬ G.Adj v z) :
+    ∃ (p : G.Walk u u) (k : ℕ),
+      2 ≤ k ∧ p.IsCycle ∧ p.length = 2 ^ k + 1 ∧ s(u, v) ∈ p.edges := by
+  classical
+  let r : ContractVerts v := ⟨u, G.ne_of_adj he⟩
+  have : Nonempty (ContractVerts v) := ⟨r⟩
+  have hlt : Fintype.card (ContractVerts v) < Fintype.card V := by
+    apply Fintype.card_lt_of_injective_not_surjective Subtype.val Subtype.val_injective
+    intro hs
+    obtain ⟨x, hx⟩ := hs v
+    exact x.property hx
+  have hcycle : HasPow2Cycle (contractEdge G r) := by
+    by_contra hfree
+    have hcmp := hmin.2 (ContractVerts v) (contractEdge G r)
+      ⟨contractEdge_minDegree G r he hcommon hmin.1.1, hfree⟩
+    omega
+  exact (contractEdge_lift_cycle he hcycle).resolve_left hmin.1.2
+
+private theorem bipartite_walk_length_parity {V : Type*} {G : SimpleGraph V}
+    (c : V → Bool) (hc : ∀ a b, G.Adj a b → c a ≠ c b)
+    {a b : V} (p : G.Walk a b) :
+    p.length % 2 = if c a = c b then 0 else 1 := by
+  induction p with
+  | nil => simp
+  | @cons a x b h q ih =>
+    have hax := hc a x h
+    cases ha : c a <;> cases hx : c x <;> cases hb : c b <;>
+      simp_all <;> omega
+
+/-- A minimalidade global exclui grafos bipartidos, pois um ciclo de
+comprimento `2^k + 1` tem comprimento ímpar. -/
+theorem minimal_not_bipartite {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] (hmin : IsMinimalCounterexample G)
+    (c : V → Bool) (hc : ∀ a b, G.Adj a b → c a ≠ c b) : False := by
+  classical
+  let u : V := Classical.arbitrary V
+  have hne : (G.neighborFinset u).Nonempty := by
+    apply Finset.card_pos.mp
+    change 0 < G.degree u
+    exact (by decide : 0 < 3).trans_le (hmin.1.1 u)
+  obtain ⟨v, hv⟩ := hne
+  have he : G.Adj u v := by simpa using hv
+  have hcommon (z : V) (hu : G.Adj u z) (hv : G.Adj v z) : False := by
+    have h1 := hc u v he
+    have h2 := hc u z hu
+    have h3 := hc v z hv
+    cases hu' : c u <;> cases hv' : c v <;> cases hz' : c z <;>
+      simp_all
+  obtain ⟨p, k, hk, _, hl, _⟩ := minimal_edge_dyadic_successor G hmin he hcommon
+  have hp : p.length % 2 = 0 := by simpa using bipartite_walk_length_parity c hc p
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hk
+  rw [pow_add] at hl
+  norm_num at hl
+  omega
+
 /-- Teorema 10b: Todo contraexemplo mínimo bipartido satisfaz |V_3| ≥ (20/27) |V|. -/
 theorem minimal_bipartite_cubicity {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
     (G : SimpleGraph V) [DecidableRel G.Adj]
     (hmin : IsMinimalCounterexample G)
     (hbip : ∃ c : V → Bool, ∀ u v : V, G.Adj u v → c u ≠ c v) :
     20 * Fintype.card V ≤ 27 * (Finset.univ.filter (fun v : V => G.degree v = 3)).card := by
-  sorry
+  obtain ⟨c, hc⟩ := hbip
+  exact (minimal_not_bipartite G hmin c hc).elim
 
 /-! ### Rodada 5: Autorredução de K_3-fatores e C_5-fatores (Teoremas 11–12) -/
 
@@ -1530,11 +1802,11 @@ theorem fullerene_euler_inequality {V : Type} [Fintype V] [DecidableEq V]
       have hda : 3 ≤ G.degree a := hdeg a
       have hcard_ins : (insert a s).card = s.card + 1 := by simp [ha]
       have hsum1 : ∑ v ∈ insert a s, G.degree v / 2 =
-           G.degree a / 2 + ∑ v ∈ s, G.degree v / 2 := by simp [ha]
+            G.degree a / 2 + ∑ v ∈ s, G.degree v / 2 := by simp [ha]
       have hsum2 : ∑ v ∈ insert a s, G.degree v =
-           G.degree a + ∑ v ∈ s, G.degree v := by simp [ha]
+            G.degree a + ∑ v ∈ s, G.degree v := by simp [ha]
       have hcard_filt : ((insert a s).filter (fun v => G.degree v = 3)).card =
-           (s.filter (fun v => G.degree v = 3)).card + if G.degree a = 3 then 1 else 0 := by
+            (s.filter (fun v => G.degree v = 3)).card + if G.degree a = 3 then 1 else 0 := by
         by_cases h3 : G.degree a = 3
         · simp [Finset.filter_insert, ha, h3]
         · simp [Finset.filter_insert, h3]
