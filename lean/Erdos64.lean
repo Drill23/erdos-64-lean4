@@ -1,12 +1,12 @@
 import Mathlib
 
 /-!
-# Projeto Erdős #64 — Formalização em Lean 4 (`Checkpoint v1.4`)
+# Projeto Erdős #64 — Formalização em Lean 4 (`Checkpoint v1.5`)
 
-Sincronizado com `README.md` e `Erdos64_lean.md` (Pós-Rodada 9, Progresso `24% / 100%`).
-Lean `v4.36.0` / Mathlib `v4.36.0`: 0 erros, 0 avisos de linter e 9 avisos de `sorry`.
+Sincronizado com `README.md` e `Erdos64_lean.md` (Pós-Rodada 10, Progresso `25% / 100%`).
+Lean `v4.36.0` / Mathlib `v4.36.0`: 0 erros, 0 avisos de linter e 8 avisos de `sorry`.
 
-16 teoremas públicos verificados sem dependência de `sorry`:
+19 teoremas públicos verificados sem dependência de `sorry`:
 - `HasPow2Cycle.map`, `HasPow2Cycle.mono`, `HasPow2Cycle.of_induce`
 - `no_two_common_neighbors`, `common_neighbors_le_one`, `triangles_edge_disjoint`
 - `minimal_connected`, `high_degree_independent`, `no_L3_vertices`
@@ -14,9 +14,9 @@ Lean `v4.36.0` / Mathlib `v4.36.0`: 0 erros, 0 avisos de linter e 9 avisos de `s
 - `minimal_bridgeless`
 - `bipartite_three_terminals_same_color`, `even_closed_walk_same_color_edges`,
   `two_join_edges_dyadic_residues` (lemas auxiliares do Teorema 19)
-- `hex_has_cycle16_of_no_close_collision`
-
-Em `hex_covering_has_cycle_4_8_16`, apenas o raio de colisão 6 mantém `sorry`.
+- `hex_has_cycle16_of_no_close_collision`, `hex_local_injective_has_cycle_4_8_16`,
+  `hex_covering_has_cycle_4_8_16` (núcleo combinatório completo do Teorema 17)
+- `euler_boundary_deficit_bound` (núcleo algébrico do Teorema 20)
 -/
 
 open SimpleGraph
@@ -514,7 +514,6 @@ theorem cycle_detour_cons {V : Type*} {G : SimpleGraph V} {v a w : V}
     · exact G.ne_of_adj h h1
   · exact hwq (Walk.snd_mem_support_of_mem_edges q he)
 
-
 /-- Corte por corda: uma corda `c.getVert i — x` (fora das arestas do ciclo) divide o ciclo `c`
 em dois ciclos de comprimentos `i + 1` e `c.length - i + 1`. -/
 theorem cycle_chord_split {V : Type*} {H : SimpleGraph V} {x : V} (c : H.Walk x x)
@@ -527,13 +526,15 @@ theorem cycle_chord_split {V : Type*} {H : SimpleGraph V} {x : V} (c : H.Walk x 
     refine ⟨hc.isPath_take hin, fun hm => hnot ?_⟩
     rw [Walk.edges_take] at hm
     exact List.mem_of_mem_take hm
-  · simp [Walk.take_length]; omega
+  · simp [Walk.take_length]
+    <;> omega
   · rw [Walk.cons_isCycle_iff]
     refine ⟨hc.isPath_drop hi0, fun hm => hnot ?_⟩
     rw [Walk.edges_drop] at hm
     rw [Sym2.eq_swap]
     exact List.mem_of_mem_drop hm
-  · simp [Walk.drop_length]; omega
+  · simp [Walk.drop_length]
+    <;> omega
 
 /-- Corte por ápice externo: um vértice `w` fora do ciclo adjacente a `x` e a `c.getVert i`
 divide o ciclo em dois ciclos de comprimentos `i + 2` e `c.length - i + 2`. -/
@@ -558,7 +559,8 @@ theorem cycle_apex_split {V : Type*} {H : SimpleGraph V} {x w : V} (c : H.Walk x
       · exact H.ne_of_adj h2 h
       · exact hne h
     · exact hwt (Walk.snd_mem_support_of_mem_edges _ he)
-  · simp [Walk.take_length]; omega
+  · simp [Walk.take_length]
+    <;> omega
   · rw [Walk.cons_isCycle_iff, Walk.cons_isPath_iff]
     refine ⟨⟨hc.isPath_drop hi0, hwd⟩, fun hm => ?_⟩
     rw [Walk.edges_cons, List.mem_cons] at hm
@@ -567,8 +569,9 @@ theorem cycle_apex_split {V : Type*} {H : SimpleGraph V} {x w : V} (c : H.Walk x
       rcases he with ⟨_, h⟩ | ⟨h, _⟩
       · exact H.ne_of_adj h1 h.symm
       · exact hne h.symm
-    · exact hwd (Walk.fst_mem_support_of_mem_edges _ he)
-  · simp [Walk.drop_length]; omega
+    · exact hwd (Walk.snd_mem_support_of_mem_edges _ he)
+  · simp [Walk.drop_length]
+    <;> omega
 
 /-- Teorema 7: Em qualquer grafo livre de C_{2^k}, `G_Δ` não possui ciclos de comprimento ≥ 4. -/
 theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
@@ -871,13 +874,365 @@ theorem hex_has_cycle16_of_no_close_collision {V : Type*} (G : SimpleGraph V)
     exact hexPatchBoundary_inj i j (hsep _ _ ⟨p⟩ ((hexLattice.dist_le p).trans hp) hij)
   exact ⟨g 0, (cycleGraph.cycle 13).map g, cycleGraph.isCycle_cycle.map hg, by simp⟩
 
-/-- Teorema 17 (Núcleo Combinatório): Todo grafo finito simples bipartido `G` que admite
-um recobrimento pela rede hexagonal infinita `hexLattice` contém um ciclo simples de
-comprimento `4`, `8` ou `16`. -/
-theorem hex_covering_has_cycle_4_8_16 {V : Type} [Fintype V] [DecidableEq V]
-    (G : SimpleGraph V)
-    (hbip : ∃ c : V → Bool, ∀ u v : V, G.Adj u v → c u ≠ c v)
-    (π : hexLattice →g G) (hcov : IsGraphCovering π) :
+/-! #### Rodada 10: Coordenadas e certificados locais dos desvios hexagonais -/
+
+private abbrev HexVertex := ℤ × ℤ × Bool
+
+private def hexOrigin : HexVertex := (0, 0, false)
+
+private def hexPlace (o z : HexVertex) : HexVertex :=
+  if o.2.2 then (o.1 - z.1, o.2.1 - z.2.1, !z.2.2)
+  else (o.1 + z.1, o.2.1 + z.2.1, z.2.2)
+
+private def hexRebase (o z : HexVertex) : HexVertex :=
+  if o.2.2 then (o.1 - z.1, o.2.1 - z.2.1, !z.2.2)
+  else (z.1 - o.1, z.2.1 - o.2.1, z.2.2)
+
+/-- Translação, com inversão das duas coordenadas e das cores quando a raiz é da cor oposta. -/
+private def hexCoordinateIso (o : HexVertex) : hexLattice ≃g hexLattice where
+  toFun := hexPlace o
+  invFun := hexRebase o
+  left_inv := by
+    rintro ⟨x, y, b⟩
+    rcases o with ⟨a, z, c⟩
+    cases c <;> simp [hexPlace, hexRebase]
+  right_inv := by
+    rintro ⟨x, y, b⟩
+    rcases o with ⟨a, z, c⟩
+    cases c <;> simp [hexPlace, hexRebase]
+  map_rel_iff' := by
+    rintro ⟨x, y, b⟩ ⟨x', y', b'⟩
+    rcases o with ⟨a, z, c⟩
+    cases c <;> cases b <;> cases b' <;> simp [hexLattice, hexPlace] <;> omega
+
+private theorem hexCoordinateIso_origin (o : HexVertex) :
+    hexCoordinateIso o hexOrigin = o := by
+  rcases o with ⟨x, y, c⟩
+  cases c <;> simp [hexCoordinateIso, hexPlace, hexOrigin]
+
+/-- Os três vizinhos, numerados a partir da aresta que mantém as coordenadas. -/
+private def hexStep (o : HexVertex) (i : Fin 3) : HexVertex :=
+  let d : ℤ := if o.2.2 then 1 else -1
+  if i = 0 then (o.1, o.2.1, !o.2.2)
+  else if i = 1 then (o.1 + d, o.2.1, !o.2.2)
+  else (o.1, o.2.1 + d, !o.2.2)
+
+private theorem hexStep_adj (o : HexVertex) (i : Fin 3) : hexLattice.Adj o (hexStep o i) := by
+  rcases o with ⟨x, y, c⟩
+  fin_cases i <;> cases c <;> simp [hexLattice, hexStep] <;> omega
+
+private theorem hexAdj_color {u v : HexVertex} (h : hexLattice.Adj u v) :
+    u.2.2 ≠ v.2.2 := by
+  rcases h with ⟨a, b, _⟩ | ⟨a, b, _⟩ <;> simp [a, b]
+
+private abbrev hexWithin (r : ℤ) (u v : HexVertex) : Prop :=
+  u.1 - r ≤ v.1 ∧ v.1 ≤ u.1 + r ∧
+  u.2.1 - r ≤ v.2.1 ∧ v.2.1 ≤ u.2.1 + r ∧
+  u.1 + u.2.1 - r ≤ v.1 + v.2.1 ∧ v.1 + v.2.1 ≤ u.1 + u.2.1 + r
+
+private theorem hexEdge_within {u v : HexVertex} (h : hexLattice.Adj u v) :
+    hexWithin 1 u v := by
+  rcases h with ⟨_, _, h⟩ | ⟨_, _, h⟩ <;>
+    rcases h with h | h | h <;> dsimp [hexWithin] <;> omega
+
+private theorem hexTwoEdges_within {u v w : HexVertex} (h : hexLattice.Adj u v)
+    (h' : hexLattice.Adj v w) : hexWithin 1 u w := by
+  rcases h with ⟨a, b, h⟩ | ⟨a, b, h⟩ <;>
+    rcases h' with ⟨a', b', h'⟩ | ⟨a', b', h'⟩
+  · simp_all
+  · rcases h with h | h | h <;> rcases h' with h' | h' | h' <;> dsimp [hexWithin] <;> omega
+  · rcases h with h | h | h <;> rcases h' with h' | h' | h' <;> dsimp [hexWithin] <;> omega
+  · simp_all
+
+private theorem hexWalk_within : ∀ {u v} (p : hexLattice.Walk u v),
+    hexWithin (↑((p.length + 1) / 2)) u v
+  | _, _, .nil => by simp [hexWithin]
+  | _, _, .cons h .nil => by simpa using hexEdge_within h
+  | _, _, .cons h (.cons h' tail) => by
+    have h1 := hexTwoEdges_within h h'
+    have h2 := hexWalk_within tail
+    simp only [Walk.length_cons]
+    dsimp [hexWithin] at *
+    omega
+
+private def hexDestination (u : HexVertex) : List (Fin 3) → HexVertex
+  | [] => u
+  | i :: s => hexDestination (hexStep u i) s
+
+private def hexRoute : (u : HexVertex) → (s : List (Fin 3)) →
+    hexLattice.Walk u (hexDestination u s)
+  | _, [] => .nil
+  | u, i :: s => .cons (hexStep_adj u i) (hexRoute (hexStep u i) s)
+
+@[simp] private theorem hexRoute_length : ∀ (u) (s), (hexRoute u s).length = s.length
+  | _, [] => rfl
+  | u, i :: s => by
+    change (hexRoute (hexStep u i) s).length + 1 = s.length + 1
+    rw [hexRoute_length (hexStep u i) s]
+
+/-- Palavras de passos centradas na origem. Pontos interiores têm um caminho curto.
+Os dezoito pontos da borda têm quatro desvios de comprimento oito. -/
+private def hexLocalData : ℕ → ℕ → (List (Fin 3) ⊕ (Fin 4 → List (Fin 3)))
+  | 0, 3 => .inr ![
+      [1, 0, 1, 0, 2, 0, 1, 2], [1, 0, 1, 2, 1, 0, 2, 0],
+      [2, 0, 1, 0, 1, 0, 1, 2], [2, 0, 1, 0, 1, 2, 1, 0]]
+  | 0, 4 => .inr ![
+      [0, 2, 1, 0, 1, 0, 1, 0], [1, 0, 2, 0, 1, 2, 1, 2],
+      [1, 2, 1, 2, 1, 0, 2, 0], [2, 0, 1, 0, 1, 2, 1, 2]]
+  | 0, 5 => .inr ![
+      [0, 2, 1, 0, 1, 0, 1, 2], [0, 2, 1, 0, 1, 2, 1, 0],
+      [1, 0, 1, 0, 1, 2, 0, 2], [1, 0, 1, 2, 0, 2, 1, 0]]
+  | 0, 6 => .inr ![
+      [0, 2, 1, 0, 1, 2, 1, 2], [0, 2, 1, 2, 1, 2, 1, 0],
+      [1, 0, 1, 2, 0, 2, 1, 2], [1, 2, 0, 2, 1, 2, 1, 0]]
+  | 1, 2 => .inr ![
+      [1, 0, 1, 0, 1, 0, 2, 1], [1, 0, 2, 0, 2, 0, 1, 2],
+      [1, 2, 1, 0, 2, 0, 2, 0], [2, 0, 1, 0, 2, 0, 1, 2]]
+  | 1, 3 => .inl [1, 0, 1, 0]
+  | 1, 4 => .inl [1, 0, 1, 2]
+  | 1, 5 => .inl [1, 2, 1, 2]
+  | 1, 6 => .inr ![
+      [0, 2, 0, 2, 1, 0, 1, 2], [0, 2, 0, 2, 1, 2, 1, 0],
+      [1, 0, 1, 2, 0, 2, 0, 2], [1, 2, 0, 2, 0, 2, 1, 0]]
+  | 2, 1 => .inr ![
+      [1, 0, 1, 0, 2, 0, 2, 1], [1, 0, 1, 0, 2, 1, 2, 0],
+      [2, 0, 1, 0, 1, 0, 2, 1], [2, 0, 2, 0, 2, 0, 1, 2]]
+  | 2, 2 => .inl [1, 0, 2, 0]
+  | 2, 3 => .inl [1, 0]
+  | 2, 4 => .inl [1, 2]
+  | 2, 5 => .inl [0, 2, 1, 2]
+  | 2, 6 => .inr ![
+      [0, 1, 0, 2, 1, 2, 1, 2], [0, 2, 0, 2, 0, 2, 1, 0],
+      [0, 2, 1, 2, 1, 2, 0, 1], [1, 2, 0, 1, 0, 2, 1, 2]]
+  | 3, 0 => .inr ![
+      [1, 0, 2, 0, 2, 0, 2, 1], [1, 0, 2, 0, 2, 1, 2, 0],
+      [2, 0, 1, 0, 2, 0, 2, 1], [2, 0, 1, 0, 2, 1, 2, 0]]
+  | 3, 1 => .inl [2, 0, 2, 0]
+  | 3, 2 => .inl [2, 0]
+  | 3, 4 => .inl [0, 2]
+  | 3, 5 => .inl [0, 2, 0, 2]
+  | 3, 6 => .inr ![
+      [0, 1, 0, 2, 0, 2, 1, 2], [0, 2, 0, 2, 1, 2, 0, 1],
+      [1, 2, 0, 1, 0, 2, 0, 2], [1, 2, 0, 2, 0, 2, 0, 1]]
+  | 4, 0 => .inr ![
+      [0, 1, 2, 0, 2, 0, 2, 0], [1, 0, 2, 0, 2, 1, 2, 1],
+      [1, 0, 2, 1, 2, 1, 2, 0], [2, 0, 1, 0, 2, 1, 2, 1]]
+  | 4, 1 => .inl [2, 0, 2, 1]
+  | 4, 2 => .inl [2, 1]
+  | 4, 3 => .inl [0, 1]
+  | 4, 4 => .inl [0, 1, 0, 2]
+  | 4, 5 => .inr ![
+      [0, 1, 0, 1, 0, 2, 1, 2], [0, 1, 0, 2, 1, 2, 0, 1],
+      [1, 2, 0, 1, 0, 1, 0, 2], [1, 2, 0, 1, 0, 2, 0, 1]]
+  | 5, 0 => .inr ![
+      [0, 1, 2, 0, 2, 0, 2, 1], [0, 1, 2, 0, 2, 1, 2, 0],
+      [1, 0, 2, 1, 2, 1, 2, 1], [2, 0, 2, 0, 2, 1, 0, 1]]
+  | 5, 1 => .inl [2, 1, 2, 1]
+  | 5, 2 => .inl [0, 1, 2, 1]
+  | 5, 3 => .inl [0, 1, 0, 1]
+  | 5, 4 => .inr ![
+      [0, 1, 2, 1, 0, 2, 0, 2], [0, 2, 0, 2, 0, 1, 2, 1],
+      [1, 2, 0, 1, 0, 1, 0, 1], [2, 1, 0, 1, 0, 2, 0, 2]]
+  | 6, 0 => .inr ![
+      [0, 1, 2, 0, 2, 1, 2, 1], [0, 1, 2, 1, 2, 1, 2, 0],
+      [2, 0, 2, 1, 0, 1, 2, 1], [2, 1, 0, 1, 2, 1, 2, 0]]
+  | 6, 1 => .inr ![
+      [0, 1, 0, 1, 2, 0, 2, 1], [0, 1, 0, 1, 2, 1, 2, 0],
+      [2, 0, 2, 1, 0, 1, 0, 1], [2, 1, 0, 1, 0, 1, 2, 0]]
+  | 6, 2 => .inr ![
+      [0, 1, 0, 1, 0, 1, 2, 0], [0, 1, 2, 1, 2, 1, 0, 2],
+      [0, 2, 0, 1, 2, 1, 2, 1], [2, 1, 0, 1, 2, 1, 0, 2]]
+  | 6, 3 => .inr ![
+      [0, 1, 0, 1, 2, 1, 0, 2], [0, 1, 0, 2, 0, 1, 2, 1],
+      [2, 1, 0, 1, 0, 1, 0, 2], [2, 1, 0, 1, 0, 2, 0, 1]]
+  | _, _ => .inl []
+
+private def hexOffset (i j : Fin 7) : HexVertex := ((i.val : ℤ) - 3, (j.val : ℤ) - 3, false)
+
+private def hexEndNeighbors (word : List (Fin 3)) : HexVertex × HexVertex :=
+  let p := hexRoute hexOrigin word
+  (p.getVert 1, p.getVert 7)
+
+private def hexLocalCorrect (z : HexVertex) :
+    (List (Fin 3) ⊕ (Fin 4 → List (Fin 3))) → Prop
+  | .inl word => word.length < 6 ∧ hexDestination hexOrigin word = z
+  | .inr words =>
+    (∀ i, (words i).length = 8 ∧ hexDestination hexOrigin (words i) = z ∧
+      (hexRoute hexOrigin (words i)).support.Nodup) ∧
+    ∀ i j, hexEndNeighbors (words i) = hexEndNeighbors (words j) → i = j
+
+private instance (z : HexVertex) (data : List (Fin 3) ⊕ (Fin 4 → List (Fin 3))) :
+    Decidable (hexLocalCorrect z data) := by
+  cases data <;> unfold hexLocalCorrect <;> infer_instance
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 4000000 in
+private theorem hexLocalData_correct : ∀ i j : Fin 7,
+    hexWithin 3 hexOrigin (hexOffset i j) →
+    hexLocalCorrect (hexOffset i j) (hexLocalData i.val j.val) := by
+  decide
+
+private theorem walk_between_indices {U : Type*} {H : SimpleGraph U}
+    {a b : U} (p : H.Walk a b) {i j : ℕ} (hij : i ≤ j) (hj : j ≤ p.length) :
+    ∃ r : H.Walk (p.getVert i) (p.getVert j), r.length = j - i := by
+  let q := (p.drop i).take (j - i)
+  have hEnd : (p.drop i).getVert (j - i) = p.getVert j := by
+    rw [Walk.drop_getVert]
+    congr 1
+    omega
+  refine ⟨q.copy rfl hEnd, ?_⟩
+  simp [q, min_eq_left (show j - i ≤ p.length - i by omega)]
+
+/-- Se o desvio evita a colisão entre os dois vizinhos extremos, sua projeção
+é um ciclo simples de comprimento oito. -/
+private theorem hex_detour_projects_cycle {U V : Type*}
+    {H : SimpleGraph U} {G : SimpleGraph V} (π : H →g G) (C : G.Coloring Bool)
+    {u w : U} (p : H.Walk u w) (hp : p.IsPath) (hlen : p.length = 8) (heq : π u = π w)
+    (hsep : ∀ a b, H.Reachable a b → H.dist a b < 6 → π a = π b → a = b)
+    (hends : π (p.getVert 1) ≠ π (p.getVert 7)) :
+    ∃ (v : V) (q : G.Walk v v), q.IsCycle ∧ q.length = 8 := by
+  have gap {i j : ℕ} (hij : i < j) (hj : j ≤ 8)
+      (he : π (p.getVert i) = π (p.getVert j)) : 6 ≤ j - i ∧ Even (j - i) := by
+    obtain ⟨r, hlenR⟩ := walk_between_indices p hij.le (by omega : j ≤ p.length)
+    refine ⟨?_, ?_⟩
+    · by_contra! h
+      have hdist := H.dist_le r
+      have he' := hsep _ _ ⟨r⟩ (by omega) he
+      have : i = j := hp.getVert_injOn (by change i ≤ p.length; omega)
+        (by change j ≤ p.length; omega) he'
+      omega
+    · have h := (C.even_length_iff_congr (r.map π)).mpr (by rw [he])
+      simpa [hlenR] using h
+  have no_repeat {i j : ℕ} (hij : i < j) (hj : j ≤ 7)
+      (he : π (p.getVert i) = π (p.getVert j)) : False := by
+    obtain ⟨hge, hpar⟩ := gap hij (by omega) he
+    rw [Nat.even_iff] at hpar
+    have hcases : (i = 0 ∧ j = 6) ∨ (i = 1 ∧ j = 7) := by omega
+    rcases hcases with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · have hp8 : p.getVert 8 = w := hlen ▸ p.getVert_length
+      have he68 : π (p.getVert 6) = π (p.getVert 8) := by
+        rw [hp8, ← heq, ← he, Walk.getVert_zero]
+      have := (gap (by decide : 6 < 8) (by decide) he68).1
+      omega
+    · exact hends he
+  let q := (p.map π).copy rfl heq.symm
+  have hqLen : q.length = 8 := by simp [q, hlen]
+  refine ⟨π u, q, Walk.isCycle_iff_isPath_dropLast_and_le_length.mpr ⟨?_, by omega⟩, hqLen⟩
+  apply (Walk.IsPath.getVert_injOn_iff q.dropLast).mp
+  intro i hi j hj hij
+  change i ≤ q.dropLast.length at hi
+  change j ≤ q.dropLast.length at hj
+  rw [Walk.length_dropLast, hqLen] at hi hj
+  rw [Walk.getVert_dropLast (by omega : i < q.length),
+    Walk.getVert_dropLast (by omega : j < q.length)] at hij
+  simp only [q, Walk.getVert_copy, Walk.getVert_map] at hij
+  rcases lt_trichotomy i j with h | h | h
+  · exact (no_repeat h hj hij).elim
+  · exact h
+  · exact (no_repeat h hi hij.symm).elim
+
+private theorem hexRoute_first (u : HexVertex) (word : List (Fin 3)) (hne : word ≠ []) :
+    (hexRoute u word).getVert 1 = hexStep u (word.headD 0) := by
+  cases word with
+  | nil => exact (hne rfl).elim
+  | cons i rest =>
+    change (hexRoute (hexStep u i) rest).getVert 0 = hexStep u i
+    exact Walk.getVert_zero _
+
+private theorem hex_collision_detour {V : Type*} {G : SimpleGraph V} (π : hexLattice →g G)
+    (hlocal : ∀ o a b, hexLattice.Adj o a → hexLattice.Adj o b → π a = π b → a = b)
+    {u w : HexVertex} (p : hexLattice.Walk u w) (hp : p.length = 6)
+    (hdist : hexLattice.dist u w = 6) :
+    ∃ q : hexLattice.Walk u w, q.IsPath ∧ q.length = 8 ∧
+      π (q.getVert 1) ≠ π (q.getVert 7) := by
+  let E := hexCoordinateIso u
+  let v := E.symm w
+  have hOrigin : E hexOrigin = u := hexCoordinateIso_origin u
+  have hRoot : E.symm u = hexOrigin := E.injective (by simp [hOrigin])
+  let r : hexLattice.Walk hexOrigin v := (p.map E.symm.toHom).copy hRoot rfl
+  have hr : r.length = 6 := by simp [r, hp]
+  have hBox : hexWithin 3 hexOrigin v := by simpa [hr] using hexWalk_within r
+  have hColor : v.2.2 = false := by
+    let C : hexLattice.Coloring Bool := Coloring.mk (fun z => z.2.2) (fun h => hexAdj_color h)
+    have heven : Even r.length := by rw [hr]; decide
+    have h := (C.even_length_iff_congr r).mp heven
+    have heq : C hexOrigin = C v := by simpa only [Bool.coe_iff_coe] using h
+    change false = v.2.2 at heq
+    exact heq.symm
+  have hCoords : -3 ≤ v.1 ∧ v.1 ≤ 3 ∧ -3 ≤ v.2.1 ∧ v.2.1 ≤ 3 := by
+    dsimp [hexWithin, hexOrigin] at hBox
+    omega
+  let i : Fin 7 := ⟨(v.1 + 3).toNat, by omega⟩
+  let j : Fin 7 := ⟨(v.2.1 + 3).toNat, by omega⟩
+  have hOffset : hexOffset i j = v := by
+    refine Prod.ext ?_ (Prod.ext ?_ hColor.symm)
+    · change ((v.1 + 3).toNat : ℤ) - 3 = v.1
+      omega
+    · change ((v.2.1 + 3).toNat : ℤ) - 3 = v.2.1
+      omega
+  have hCert := hexLocalData_correct i j (hOffset.symm ▸ hBox)
+  let placed (word : List (Fin 3)) (he : hexDestination hexOrigin word = hexOffset i j) :
+      hexLattice.Walk u w :=
+    ((hexRoute hexOrigin word).map E.toHom).copy hOrigin
+      (by simp [he, hOffset, v])
+  have hPlacedLength (word) (he) : (placed word he).length = word.length := by
+    simp [placed]
+  have hPlacedVertex (word) (he) (n) :
+      (placed word he).getVert n = E ((hexRoute hexOrigin word).getVert n) := by
+    simp [placed, Walk.getVert_map]
+  cases hData : hexLocalData i.val j.val with
+  | inl word =>
+    rw [hData] at hCert
+    obtain ⟨hLen, hEnd⟩ := hCert
+    have h := hexLattice.dist_le (placed word hEnd)
+    rw [hPlacedLength word hEnd, hdist] at h
+    omega
+  | inr words =>
+    rw [hData] at hCert
+    obtain ⟨hRoute, hPairs⟩ := hCert
+    let q (k : Fin 4) := placed (words k) (hRoute k).2.1
+    have hLen (k) : (q k).length = 8 := (hPlacedLength (words k) (hRoute k).2.1).trans (hRoute k).1
+    have hVertex (k n) :
+        (q k).getVert n = E ((hexRoute hexOrigin (words k)).getVert n) :=
+      hPlacedVertex (words k) (hRoute k).2.1 n
+    have hLast (k) : hexLattice.Adj w ((q k).getVert 7) := by
+      have h := (q k).adj_getVert_succ (i := 7) (by rw [hLen]; decide)
+      change hexLattice.Adj ((q k).getVert 7) ((q k).getVert 8) at h
+      rw [← hLen k, Walk.getVert_length] at h
+      exact h.symm
+    have hGood : ∃ k, π ((q k).getVert 1) ≠ π ((q k).getVert 7) := by
+      by_contra h
+      push Not at h
+      have hHead : Function.Injective (fun k : Fin 4 => (words k).headD 0) := by
+        intro a b hab
+        change (words a).headD 0 = (words b).headD 0 at hab
+        have hFirst (k : Fin 4) :
+            (q k).getVert 1 = E (hexStep hexOrigin ((words k).headD 0)) := by
+          rw [hVertex, hexRoute_first]
+          intro hn
+          have hlen := (hRoute k).1
+          simp [hn] at hlen
+        have hF : (q a).getVert 1 = (q b).getVert 1 := by rw [hFirst, hFirst, hab]
+        have hL : (q a).getVert 7 = (q b).getVert 7 := by
+          apply hlocal w _ _ (hLast a) (hLast b)
+          rw [← h a, ← h b, hF]
+        rw [hVertex a 1, hVertex b 1] at hF
+        rw [hVertex a 7, hVertex b 7] at hL
+        exact hPairs a b (Prod.ext (E.injective hF) (E.injective hL))
+      have hCard := Fintype.card_le_of_injective _ hHead
+      simp at hCard
+    obtain ⟨k, hk⟩ := hGood
+    have hRawPath := (Walk.isPath_def (hexRoute hexOrigin (words k))).mpr (hRoute k).2.2
+    have hPath : (q k).IsPath := by
+      simpa [q, placed] using hRawPath.map E.injective
+    exact ⟨q k, hPath, hLen k, hk⟩
+
+/-- Uma imagem bipartida e localmente injetiva da rede hexagonal contém
+um ciclo simples de comprimento quatro, oito ou dezesseis.
+A prova usa apenas a injetividade nas vizinhanças. -/
+theorem hex_local_injective_has_cycle_4_8_16 {V : Type*} (G : SimpleGraph V)
+    (C : G.Coloring Bool) (π : hexLattice →g G)
+    (hlocal : ∀ o a b, hexLattice.Adj o a → hexLattice.Adj o b → π a = π b → a = b) :
     ∃ (v : V) (p : G.Walk v v), p.IsCycle ∧ (p.length = 4 ∨ p.length = 8 ∨ p.length = 16) := by
   classical
   let P (n : ℕ) : Prop := ∃ x y, x ≠ y ∧ π x = π y ∧
@@ -902,8 +1257,6 @@ theorem hex_covering_has_cycle_4_8_16 {V : Type} [Fintype V] [DecidableEq V]
     rw [hl] at hab
     exact Nat.find_min hexists hab ⟨a, b, hn, he, hrab, rfl⟩
   have hEven : Even p.length := by
-    obtain ⟨c, hc⟩ := hbip
-    let C : G.Coloring Bool := Coloring.mk c (fun {a b} h => hc a b h)
     simpa using (C.even_length_iff_congr (p.map π)).mpr (by rw [heq])
   have h0 : p.length ≠ 0 :=
     fun h => huw (Walk.exists_length_eq_zero_iff.mp ⟨p, h⟩)
@@ -914,15 +1267,32 @@ theorem hex_covering_has_cycle_4_8_16 {V : Type} [Fintype V] [DecidableEq V]
     rw [Walk.getVert_zero] at h01
     change hexLattice.Adj (p.getVert 1) (p.getVert 2) at h12
     rw [← h, Walk.getVert_length] at h12
-    exact huw ((hcov (p.getVert 1)).1 u w h01.symm h12 heq)
+    exact huw (hlocal (p.getVert 1) u w h01.symm h12 heq)
   have hcases : p.length = 4 ∨ p.length = 6 := by
     rw [Nat.even_iff] at hEven
     omega
   rcases hcases with h4 | h6
   · obtain ⟨v, q, hq, hqLen⟩ := shortest_collision_projects_cycle π p hp (by omega) heq hsep
     exact ⟨v, q, hq, Or.inl (hqLen.trans h4)⟩
-  · -- Raio 6: certificar quatro desvios de comprimento 8 com pares extremos distintos.
-    sorry
+  · obtain ⟨q, hqPath, hqLen, hqEnds⟩ :=
+      hex_collision_detour π hlocal p h6 (hp.symm.trans h6)
+    have hs (a b) (hrab : hexLattice.Reachable a b) (hd : hexLattice.dist a b < 6)
+        (he : π a = π b) : a = b :=
+      hsep a b hrab (h6.symm ▸ hd) he
+    obtain ⟨v, r, hr, hrLen⟩ := hex_detour_projects_cycle π C q hqPath hqLen heq hs hqEnds
+    exact ⟨v, r, hr, Or.inr (Or.inl hrLen)⟩
+
+/-- Teorema 17 (Núcleo Combinatório): Todo grafo finito simples bipartido `G` que admite
+um recobrimento pela rede hexagonal infinita `hexLattice` contém um ciclo simples de
+comprimento `4`, `8` ou `16`. -/
+theorem hex_covering_has_cycle_4_8_16 {V : Type} [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V)
+    (hbip : ∃ c : V → Bool, ∀ u v : V, G.Adj u v → c u ≠ c v)
+    (π : hexLattice →g G) (hcov : IsGraphCovering π) :
+    ∃ (v : V) (p : G.Walk v v), p.IsCycle ∧ (p.length = 4 ∨ p.length = 8 ∨ p.length = 16) := by
+  obtain ⟨c, hc⟩ := hbip
+  let C : G.Coloring Bool := Coloring.mk c (fun {a b} h => hc a b h)
+  exact hex_local_injective_has_cycle_4_8_16 G C π (fun o => (hcov o).1)
 
 /-- Teorema 18 (Núcleo Algébrico — SEM `sorry`): Desigualdade Exata do Fulereno para grafos
 com `δ(G) ≥ 3`, cintura `≥ 5` e livres de `C_8` imersos 2-celularmente em superfície de
@@ -1066,6 +1436,18 @@ theorem two_join_edges_dyadic_residues {a b k : ℕ} (hk : 2 ≤ k)
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hk
   rw [pow_add] at hlen
   norm_num at hlen
+  omega
+
+/-! ### Rodada 10: Balanço de fronteira em superfícies -/
+
+/-- Núcleo algébrico do Teorema 20. `boundary` conta as arestas de corte,
+`surplus` é a soma dos excessos de grau sobre três e `chi` é a característica
+de Euler do mergulho celular do lado considerado. -/
+theorem euler_boundary_deficit_bound {n e f boundary surplus : ℕ} {chi : ℤ}
+    (hhand : 2 * e + boundary = 3 * n + surplus)
+    (hfaces : 6 * f ≤ 2 * e)
+    (heuler : chi = (n : ℤ) - (e : ℤ) + (f : ℤ)) :
+    3 * chi + (surplus : ℤ) ≤ (boundary : ℤ) := by
   omega
 
 end Erdos64
