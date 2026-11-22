@@ -1,0 +1,21 @@
+name: Lean
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar elan
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+      - name: Baixar Mathlib
+        run: lake exe cache get
+      - name: Compilar
+        run: lake env lean lean/Erdos64.lean 2>&1 | tee lean-output.txt || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lean-output
+          path: lean-output.txt
