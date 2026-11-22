@@ -1,12 +1,12 @@
 import Mathlib
 
 /-!
-# Projeto Erdős #64 — Formalização em Lean 4 (`Checkpoint v1.5`)
+# Projeto Erdős #64 — Formalização em Lean 4 (`Checkpoint v1.6`)
 
-Sincronizado com `README.md` e `Erdos64_lean.md` (Pós-Rodada 10, Progresso `25% / 100%`).
-Lean `v4.36.0` / Mathlib `v4.36.0`: 0 erros, 0 avisos de linter e 8 avisos de `sorry`.
+Sincronizado com `README.md` e `Erdos64_lean.md` (Pós-Rodada 11, Progresso `25% / 100%`).
+Lean `v4.36.0` / Mathlib `v4.36.0`: 0 erros, 0 avisos de linter e 7 avisos de `sorry`.
 
-19 teoremas públicos verificados sem dependência de `sorry`:
+21 teoremas públicos verificados sem dependência de `sorry`:
 - `HasPow2Cycle.map`, `HasPow2Cycle.mono`, `HasPow2Cycle.of_induce`
 - `no_two_common_neighbors`, `common_neighbors_le_one`, `triangles_edge_disjoint`
 - `minimal_connected`, `high_degree_independent`, `no_L3_vertices`
@@ -17,6 +17,8 @@ Lean `v4.36.0` / Mathlib `v4.36.0`: 0 erros, 0 avisos de linter e 8 avisos de `s
 - `hex_has_cycle16_of_no_close_collision`, `hex_local_injective_has_cycle_4_8_16`,
   `hex_covering_has_cycle_4_8_16` (núcleo combinatório completo do Teorema 17)
 - `euler_boundary_deficit_bound` (núcleo algébrico do Teorema 20)
+- `triangle_cactus_no_long_cycle` (Teorema 7)
+- `single_join_edge_dyadic_residues` (núcleo aritmético do caso de uma junção do Teorema 21)
 -/
 
 open SimpleGraph
@@ -481,11 +483,312 @@ def triangleSubgraph {V : Type*} (G : SimpleGraph V) : SimpleGraph V where
     rintro v ⟨hvv, _⟩
     exact G.ne_of_adj hvv rfl⟩
 
+/-- Une dois vértices de um ciclo por seus dois arcos simples. -/
+private theorem cycle_arcs {V : Type*} {G : SimpleGraph V} {v a b : V}
+    (p : G.Walk v v) (hc : p.IsCycle) (ha : a ∈ p.support) (hb : b ∈ p.support) (hn : a ≠ b) :
+    ∃ (q : G.Walk a b) (r : G.Walk b a), q.IsPath ∧ r.IsPath ∧
+      q.length + r.length = p.length ∧ q.support ⊆ p.support ∧ r.support ⊆ p.support ∧
+      q.edges ⊆ p.edges ∧ r.edges ⊆ p.edges := by
+  classical
+  let c := p.rotate a ha
+  have hbc : b ∈ c.support := (p.mem_support_rotate_iff a ha).mpr hb
+  let q := c.takeUntil b hbc
+  let r := c.dropUntil b hbc
+  have hc' : c.IsCycle := hc.rotate ha
+  have hqr : q.append r = c := c.take_spec hbc
+  have hq : q.IsPath := hc'.isPath_takeUntil hbc
+  have hr : r.IsPath := (hqr.symm ▸ hc').isPath_of_append_right (Walk.not_nil_of_ne hn)
+  have hcs : c.support ⊆ p.support := fun _ h => (p.mem_support_rotate_iff a ha).mp h
+  have hce : c.edges ⊆ p.edges := (p.rotate_edges a ha).perm.subset
+  refine ⟨q, r, hq, hr, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [← Walk.length_append, hqr]
+    exact p.length_rotate a ha
+  · exact fun _ h => hcs (c.support_takeUntil_subset_support hbc h)
+  · exact fun _ h => hcs (c.support_dropUntil_subset_support hbc h)
+  · exact fun _ h => hce (c.edges_takeUntil_subset_edges hbc h)
+  · exact fun _ h => hce (c.edges_dropUntil_subset_edges hbc h)
+
+/-- Uma aresta fora de um caminho simples de comprimento pelo menos dois o fecha em ciclo. -/
+private theorem close_simple_path {V : Type*} {G : SimpleGraph V} {a b : V}
+    (p : G.Walk a b) (hp : p.IsPath) (hl : 2 ≤ p.length) (e : G.Adj b a) :
+    (Walk.cons e p).IsCycle := by
+  apply (Walk.cons_isCycle_iff p e).mpr
+  refine ⟨hp, fun h => ?_⟩
+  rw [Sym2.eq_swap] at h
+  have := hp.length_eq_one_of_mem_edges h
+  omega
+
+private theorem length_ge_two_of_edge_notMem {V : Type*} {G : SimpleGraph V} {a b : V}
+    (p : G.Walk a b) (h : s(a, b) ∉ p.edges) (hne : a ≠ b) : 2 ≤ p.length := by
+  have hpos : 0 < p.length := Walk.not_nil_iff_lt_length.mp (Walk.not_nil_of_ne hne)
+  by_contra! hh
+  have hl : p.length = 1 := by omega
+  apply h
+  apply (p.mk_mem_edges_iff_exists).mpr
+  refine ⟨0, hpos, ?_⟩
+  rw [Walk.getVert_zero, Nat.zero_add, ← hl, Walk.getVert_length]
+
+private theorem shortest_long_cycle_adj_mem_edges {V : Type*} {H : SimpleGraph V} {v a b : V}
+    (p : H.Walk v v) (hp : p.IsCycle) (h5 : 5 ≤ p.length)
+    (hm : ∀ (u : V) (q : H.Walk u u), q.IsCycle → 4 ≤ q.length → p.length ≤ q.length)
+    (ha : a ∈ p.support) (hb : b ∈ p.support) (hab : H.Adj a b) :
+    s(a, b) ∈ p.edges := by
+  by_contra hn
+  have hne := H.ne_of_adj hab
+  obtain ⟨q, r, hq, hr, hl, _, _, hqe, hre⟩ := cycle_arcs p hp ha hb hne
+  have hq2 := length_ge_two_of_edge_notMem q (fun h => hn (hqe h)) hne
+  have hr2 := length_ge_two_of_edge_notMem r (fun h => hn (hre (Sym2.eq_swap ▸ h))) hne.symm
+  by_cases h : 3 ≤ q.length
+  · have hbnd := hm b (Walk.cons hab.symm q)
+      (close_simple_path q hq hq2 hab.symm) (by simp only [Walk.length_cons]; omega)
+    simp only [Walk.length_cons] at hbnd
+    omega
+  · have hbnd := hm a (Walk.cons hab r)
+      (close_simple_path r hr hr2 hab) (by simp only [Walk.length_cons]; omega)
+    simp only [Walk.length_cons] at hbnd
+    omega
+
+private theorem shortest_long_cycle_external_mem_edges {V : Type*}
+    {H : SimpleGraph V} {v a b z : V}
+    (p : H.Walk v v) (hp : p.IsCycle) (h5 : 5 ≤ p.length)
+    (hm : ∀ (u : V) (q : H.Walk u u), q.IsCycle → 4 ≤ q.length → p.length ≤ q.length)
+    (ha : a ∈ p.support) (hb : b ∈ p.support) (hz : z ∉ p.support) (hne : a ≠ b)
+    (haz : H.Adj a z) (hbz : H.Adj b z) :
+    s(a, b) ∈ p.edges := by
+  by_contra hn
+  obtain ⟨q, r, hq, hr, hl, hqs, hrs, hqe, hre⟩ := cycle_arcs p hp ha hb hne
+  have hq2 := length_ge_two_of_edge_notMem q (fun h => hn (hqe h)) hne
+  have hr2 := length_ge_two_of_edge_notMem r (fun h => hn (hre (Sym2.eq_swap ▸ h))) hne.symm
+  have shortcut {x y : V} (s : H.Walk x y) (hs : s.IsPath) (hs2 : 2 ≤ s.length)
+      (hss : s.support ⊆ p.support) (hx : H.Adj x z) (hy : H.Adj y z) :
+      p.length ≤ s.length + 2 := by
+    have hpath : (s.concat hy).IsPath := hs.concat (fun h => hz (hss h)) hy
+    have hcyc := close_simple_path (s.concat hy) hpath (by
+      simp only [Walk.length_concat]; omega) hx.symm
+    have hc4 : 4 ≤ (Walk.cons hx.symm (s.concat hy)).length := by
+      simp only [Walk.length_cons, Walk.length_concat]
+      omega
+    simpa [Walk.length_cons, Walk.length_concat, Nat.add_assoc] using hm z _ hcyc hc4
+  have hq' := shortcut q hq hq2 hqs haz hbz
+  have hr' := shortcut r hr hr2 hrs hbz haz
+  omega
+
+private theorem long_cycle_not_triangle_in_edges {V : Type*}
+    {H : SimpleGraph V} {v a b z : V} (p : H.Walk v v) (hp : p.IsCycle) (h5 : 5 ≤ p.length)
+    (hab : s(a, b) ∈ p.edges) (haz : s(a, z) ∈ p.edges) (hbz : s(b, z) ∈ p.edges) : False := by
+  classical
+  let c := p.rotate a (p.fst_mem_support_of_mem_edges hab)
+  have hc : c.IsCycle := hp.rotate _
+  have hc5 : 5 ≤ c.length := by simpa [c] using h5
+  have he : ∀ e ∈ p.edges, e ∈ c.edges :=
+    (p.rotate_edges a _).perm.symm.subset
+  have hcb := hc.isPath_dropLast.eq_snd_or_eq_penultimate_of_start_mem_edges (he _ hab)
+  have hcz := hc.isPath_dropLast.eq_snd_or_eq_penultimate_of_start_mem_edges (he _ haz)
+  have hne : b ≠ z := H.ne_of_adj (p.adj_of_mem_edges hbz)
+  have hm : s(c.snd, c.penultimate) ∈ c.edges := by
+    rcases hcb with hb | hb <;> rcases hcz with hz | hz
+    · exact (hne (hb.trans hz.symm)).elim
+    · rw [← hb, ← hz]
+      exact he _ hbz
+    · rw [← hz, ← hb]
+      exact he _ (Sym2.eq_swap ▸ hbz)
+    · exact (hne (hb.trans hz.symm)).elim
+  have hEdges : c.edges = s(a, c.snd) :: c.tail.edges := by
+    have h := congrArg Walk.edges (c.cons_tail_eq hc.not_nil)
+    simpa only [Walk.edges_cons] using h.symm
+  rw [hEdges, List.mem_cons] at hm
+  rcases hm with hm | hm
+  · rw [Sym2.eq_iff] at hm
+    rcases hm with ⟨h, _⟩ | ⟨_, h⟩
+    · exact (H.ne_of_adj (c.adj_snd hc.not_nil)) h.symm
+    · have hf := hc.getVert_endpoint_iff
+        (i := c.length - 1) (by omega : c.length - 1 ≤ c.length)
+      rcases hf.mp h with he | he <;> omega
+  · have h := hc.isPath_tail.eq_snd_of_mem_edges hm
+    change c.getVert (c.length - 1) = c.tail.getVert 1 at h
+    rw [Walk.getVert_tail] at h
+    have hi : 1 ≤ c.length - 1 ∧ c.length - 1 ≤ c.length := by omega
+    have hj : 1 ≤ 2 ∧ 2 ≤ c.length := by omega
+    have hidx := hc.getVert_injOn hi hj h
+    omega
+
+private def tipOnWalk {V : Type*} {G : SimpleGraph V} {a b : V}
+    (p : (triangleSubgraph G).Walk a b) (z : V) : Prop :=
+  ∃ x y, s(x, y) ∈ p.edges ∧ G.Adj x z ∧ G.Adj y z
+
+private theorem expand_triangle_path {V : Type*} {G : SimpleGraph V} {a b : V}
+    (p : (triangleSubgraph G).Walk a b) (hp : p.IsPath)
+    (hfresh : ∀ z, tipOnWalk p z → z ∉ p.support)
+    (hunique : ∀ x y u v z, s(x, y) ∈ p.edges → s(u, v) ∈ p.edges →
+      G.Adj x z → G.Adj y z → G.Adj u z → G.Adj v z → s(x, y) = s(u, v))
+    (k : ℕ) (hk : k ≤ p.length) :
+    ∃ q : G.Walk a b, q.IsPath ∧ q.length = p.length + k ∧
+      ∀ z ∈ q.support, z ∈ p.support ∨ tipOnWalk p z := by
+  induction p generalizing k with
+  | nil =>
+    have h : k = 0 := by simpa using hk
+    subst k
+    exact ⟨Walk.nil, Walk.IsPath.nil, rfl, fun _ hz => Or.inl hz⟩
+  | @cons x y b h tail ih =>
+    by_cases hzero : k = 0
+    · subst k
+      let hle : triangleSubgraph G ≤ G := fun _ _ h => h.1
+      refine ⟨(Walk.cons h tail).mapLe hle, hp.mapLe hle, by simp, ?_⟩
+      intro z hz
+      left
+      rwa [Walk.support_mapLe_eq_support] at hz
+    have lfresh (z) (ht : tipOnWalk tail z) : z ∉ tail.support := by
+      obtain ⟨i, j, hij, h1, h2⟩ := ht
+      exact fun hs => hfresh z
+        ⟨i, j, List.mem_cons_of_mem _ hij, h1, h2⟩ (List.mem_cons_of_mem _ hs)
+    have lunique i j l r z (hij : s(i, j) ∈ tail.edges) (hlr : s(l, r) ∈ tail.edges) :=
+      hunique i j l r z (List.mem_cons_of_mem _ hij) (List.mem_cons_of_mem _ hlr)
+    have hkt : k - 1 ≤ tail.length := by
+      simp only [Walk.length_cons] at hk
+      omega
+    obtain ⟨q, hq, hlen, hs⟩ := ih hp.of_cons lfresh lunique (k - 1) hkt
+    obtain ⟨z, hxz, hyz⟩ := h.2
+    have hhead : s(x, y) ∈ (Walk.cons h tail).edges := List.mem_cons_self
+    have hztip : tipOnWalk (Walk.cons h tail) z := ⟨x, y, hhead, hxz, hyz⟩
+    have htails (u) (hu : tipOnWalk tail u) : tipOnWalk (Walk.cons h tail) u := by
+      obtain ⟨i, j, he, h1, h2⟩ := hu
+      exact ⟨i, j, List.mem_cons_of_mem _ he, h1, h2⟩
+    have hzd : z ∉ q.support := by
+      intro hm
+      rcases hs z hm with ht | hz
+      · exact hfresh z hztip (List.mem_cons_of_mem _ ht)
+      · obtain ⟨i, j, he, h1, h2⟩ := hz
+        have hEq := hunique x y i j z hhead (List.mem_cons_of_mem _ he) hxz hyz h1 h2
+        have hn := hp.isTrail.edges_nodup
+        simp only [Walk.edges_cons, List.nodup_cons] at hn
+        exact hn.1 (hEq ▸ he)
+    have hxd : x ∉ q.support := by
+      intro hm
+      rcases hs x hm with ht | hz
+      · exact ((Walk.cons_isPath_iff h tail).mp hp).2 ht
+      · exact hfresh x (htails x hz) List.mem_cons_self
+    have hqz : (Walk.cons hyz.symm q).IsPath := hq.cons hzd
+    have hqx : (Walk.cons hxz (Walk.cons hyz.symm q)).IsPath := by
+      apply hqz.cons
+      simp only [Walk.support_cons, List.mem_cons, not_or]
+      exact ⟨G.ne_of_adj hxz, hxd⟩
+    refine ⟨_, hqx, ?_, ?_⟩
+    · simp only [Walk.length_cons]
+      omega
+    · intro u hu
+      simp only [Walk.support_cons, List.mem_cons] at hu
+      rcases hu with rfl | rfl | hu
+      · exact Or.inl List.mem_cons_self
+      · exact Or.inr hztip
+      · exact (hs u hu).imp (List.mem_cons_of_mem _) (htails u)
+
+private theorem pow_two_in_cycle_interval {n : ℕ} (hn : 4 ≤ n) :
+    ∃ k : ℕ, 2 ≤ k ∧ n ≤ 2 ^ k ∧ 2 ^ k < 2 * n := by
+  let k := Nat.log 2 (n - 1)
+  have hlow := Nat.lt_pow_succ_log_self (by decide : 1 < 2) (n - 1)
+  have hhigh := Nat.pow_log_le_self 2 (x := n - 1) (by omega)
+  change n - 1 < 2 ^ (k + 1) at hlow
+  change 2 ^ k ≤ n - 1 at hhigh
+  refine ⟨k + 1, ?_, by omega, ?_⟩
+  · by_contra! h
+    have hk : k = 0 := by omega
+    rw [hk] at hlow
+    norm_num at hlow
+    omega
+  · rw [pow_succ]
+    omega
+
 /-- Teorema 7: Em qualquer grafo livre de C_{2^k}, `G_Δ` não possui ciclos de comprimento ≥ 4. -/
 theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
     (G : SimpleGraph V) (hfree : ¬ HasPow2Cycle G) :
     ∀ (v : V) (p : (triangleSubgraph G).Walk v v), p.IsCycle → p.length = 3 := by
-  sorry
+  classical
+  let H := triangleSubgraph G
+  have hle : H ≤ G := fun _ _ h => h.1
+  intro u p hp
+  by_contra hne
+  let P (n : ℕ) := ∃ (v : V) (q : H.Walk v v), q.IsCycle ∧ 4 ≤ q.length ∧ q.length = n
+  have hw : ∃ n, P n := ⟨p.length, u, p, hp, by have := hp.three_le_length; omega, rfl⟩
+  obtain ⟨v, c, hc, hc4, hen⟩ := Nat.find_spec hw
+  have hm (w : V) (q : H.Walk w w) (hq : q.IsCycle) (hq4 : 4 ≤ q.length) :
+      c.length ≤ q.length :=
+    hen ▸ Nat.find_min' hw (show P q.length from ⟨w, q, hq, hq4, rfl⟩)
+  have hc5 : 5 ≤ c.length := by
+    by_contra! h
+    have hl : c.length = 4 := by omega
+    exact hfree ⟨v, c.mapLe hle, 2, le_rfl, hc.mapLe hle, by simpa using hl⟩
+  have outside {a b z : V} (he : s(a, b) ∈ c.edges) (haz : G.Adj a z) (hbz : G.Adj b z) :
+      z ∉ c.support := by
+    intro hz
+    have hab : G.Adj a b := hle (c.adj_of_mem_edges he)
+    have h1 : H.Adj a z := ⟨haz, b, hab, hbz.symm⟩
+    have h2 : H.Adj b z := ⟨hbz, a, hab.symm, haz.symm⟩
+    have h3 := shortest_long_cycle_adj_mem_edges c hc hc5 hm
+      (c.fst_mem_support_of_mem_edges he) hz h1
+    have h4 := shortest_long_cycle_adj_mem_edges c hc hc5 hm
+      (c.snd_mem_support_of_mem_edges he) hz h2
+    exact long_cycle_not_triangle_in_edges c hc hc5 he h3 h4
+  have unique {a b i j z : V} (he : s(a, b) ∈ c.edges) (he' : s(i, j) ∈ c.edges)
+      (haz : G.Adj a z) (hbz : G.Adj b z) (hiz : G.Adj i z) (hjz : G.Adj j z) :
+      s(a, b) = s(i, j) := by
+    by_contra hh
+    have hthird : (i ≠ a ∧ i ≠ b) ∨ (j ≠ a ∧ j ≠ b) := by
+      by_contra! h
+      have hn := H.ne_of_adj (c.adj_of_mem_edges he')
+      apply hh
+      rw [Sym2.eq_iff]
+      have hi : i = a ∨ i = b := by
+        by_cases hi : i = a
+        · exact Or.inl hi
+        · exact Or.inr (h.1 hi)
+      have hj : j = a ∨ j = b := by
+        by_cases hj : j = a
+        · exact Or.inl hj
+        · exact Or.inr (h.2 hj)
+      rcases hi with hi | hi <;> rcases hj with hj | hj
+      · exact (hn (hi.trans hj.symm)).elim
+      · exact Or.inl ⟨hi.symm, hj.symm⟩
+      · exact Or.inr ⟨hj.symm, hi.symm⟩
+      · exact (hn (hi.trans hj.symm)).elim
+    have hab : G.Adj a b := hle (c.adj_of_mem_edges he)
+    have haz' : H.Adj a z := ⟨haz, b, hab, hbz.symm⟩
+    have hbz' : H.Adj b z := ⟨hbz, a, hab.symm, haz.symm⟩
+    have contradiction {d : V} (hd : d ∈ c.support) (hda : d ≠ a) (hdb : d ≠ b)
+        (hdz : H.Adj d z) : False := by
+      have ha := c.fst_mem_support_of_mem_edges he
+      have hb := c.snd_mem_support_of_mem_edges he
+      have hz := outside he haz hbz
+      have h1 := shortest_long_cycle_external_mem_edges c hc hc5 hm ha hd hz hda.symm haz' hdz
+      have h2 := shortest_long_cycle_external_mem_edges c hc hc5 hm hb hd hz hdb.symm hbz' hdz
+      exact long_cycle_not_triangle_in_edges c hc hc5 he h1 h2
+    have hij : G.Adj i j := hle (c.adj_of_mem_edges he')
+    rcases hthird with ⟨hia, hib⟩ | ⟨hja, hjb⟩
+    · exact contradiction (c.fst_mem_support_of_mem_edges he') hia hib
+        ⟨hiz, j, hij, hjz.symm⟩
+    · exact contradiction (c.snd_mem_support_of_mem_edges he') hja hjb
+        ⟨hjz, i, hij.symm, hiz.symm⟩
+  obtain ⟨k, hk, hlow, hhigh⟩ := pow_two_in_cycle_interval hc4
+  have hcEdges : c.edges = s(v, c.snd) :: c.tail.edges := by
+    have he := congrArg Walk.edges (c.cons_tail_eq hc.not_nil)
+    simpa only [Walk.edges_cons] using he.symm
+  have addEdge : c.tail.edges ⊆ c.edges := by
+    rw [hcEdges]
+    exact fun _ h => List.mem_cons_of_mem _ h
+  have addSupport : c.tail.support ⊆ c.support := by
+    rw [← Walk.cons_support_tail hc.not_nil]
+    exact fun _ h => List.mem_cons_of_mem _ h
+  have hfresh (z) (hz : tipOnWalk c.tail z) : z ∉ c.tail.support := by
+    obtain ⟨a, b, he, haz, hbz⟩ := hz
+    exact fun h => outside (addEdge he) haz hbz (addSupport h)
+  have hunique a b i j z (he : s(a, b) ∈ c.tail.edges) (he' : s(i, j) ∈ c.tail.edges) :=
+    unique (addEdge he) (addEdge he') (z := z)
+  have ht := c.length_tail_add_one hc.not_nil
+  have hcap : 2 ^ k - c.length ≤ c.tail.length := by omega
+  obtain ⟨q, hq, hqlen, _⟩ :=
+    expand_triangle_path c.tail hc.isPath_tail hfresh hunique _ hcap
+  have ha : G.Adj v c.snd := hle (c.adj_snd hc.not_nil)
+  have hcyc := close_simple_path q hq (by omega) ha
+  exact hfree ⟨v, Walk.cons ha q, k, hk, hcyc, by simp only [Walk.length_cons]; omega⟩
 
 /-! ### Rodada 4: Componentes de V_3 e Pisos de Cubicidade (Teoremas 8–10) -/
 
@@ -1356,6 +1659,18 @@ theorem euler_boundary_deficit_bound {n e f boundary surplus : ℕ} {chi : ℤ}
     (hfaces : 6 * f ≤ 2 * e)
     (heuler : chi = (n : ℤ) - (e : ℤ) + (f : ℤ)) :
     3 * chi + (surplus : ℤ) ≤ (boundary : ℤ) := by
+  omega
+
+/-! ### Rodada 11: Um corte cúbico e a colagem com uma aresta de junção -/
+
+/-- Com uma só aresta de junção, os dois caminhos de um ciclo diádico
+têm paridades opostas e seus comprimentos somam 3 módulo 4. -/
+theorem single_join_edge_dyadic_residues {a b k : ℕ} (hk : 2 ≤ k)
+    (hlen : a + b + 1 = 2 ^ k) :
+    a % 2 ≠ b % 2 ∧ (a + b) % 4 = 3 := by
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hk
+  rw [pow_add] at hlen
+  norm_num at hlen
   omega
 
 end Erdos64
