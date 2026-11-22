@@ -573,6 +573,83 @@ theorem cycle_apex_split {V : Type*} {H : SimpleGraph V} {x w : V} (c : H.Walk x
   · simp [Walk.drop_length]
     <;> omega
 
+
+/-- Desvios múltiplos (caso C): se cada aresta do caminho `P` tem um ápice fora de `C`, e um
+mesmo ápice nunca serve a duas arestas distintas de `E`, então para todo `j ≤ |P|` há um caminho
+com os mesmos extremos e comprimento `|P| + j`. -/
+theorem path_multi_detour {V : Type*} {G : SimpleGraph V} (C : Set V) (E : Set (Sym2 V))
+    (hII : ∀ w, w ∉ C → ∀ a b a' b', s(a, b) ∈ E → s(a', b') ∈ E →
+      G.Adj a w → G.Adj b w → G.Adj a' w → G.Adj b' w → s(a, b) = s(a', b')) :
+    ∀ {u v : V} (P : G.Walk u v), P.IsPath → (∀ y ∈ P.support, y ∈ C) →
+      (∀ e ∈ P.edges, e ∈ E) →
+      (∀ a b, s(a, b) ∈ P.edges → ∃ w, w ∉ C ∧ G.Adj a w ∧ G.Adj b w) →
+      ∀ j ≤ P.length, ∃ Q : G.Walk u v, Q.IsPath ∧ Q.length = P.length + j ∧
+        ∀ y ∈ Q.support, y ∈ P.support ∨
+          (y ∉ C ∧ ∃ a b, s(a, b) ∈ P.edges ∧ G.Adj a y ∧ G.Adj b y) := by
+  intro u v P
+  induction P with
+  | nil =>
+    intro _ _ _ _ j hj
+    refine ⟨Walk.nil, Walk.IsPath.nil, by simp at hj ⊢; omega, ?_⟩
+    intro y hy
+    exact Or.inl hy
+  | @cons a b c h P' ih =>
+    intro hP hC hE hI j hj
+    rw [Walk.cons_isPath_iff] at hP
+    have hC' : ∀ y ∈ P'.support, y ∈ C := fun y hy => hC y (by simp [hy])
+    have hE' : ∀ e ∈ P'.edges, e ∈ E := fun e he => hE e (by simp [he])
+    have hI' : ∀ a b, s(a, b) ∈ P'.edges → ∃ w, w ∉ C ∧ G.Adj a w ∧ G.Adj b w :=
+      fun a b he => hI a b (by simp [he])
+    have haC : a ∈ C := hC a (by simp)
+    have habE : s(a, b) ∈ E := hE _ (by simp)
+    -- `a` nunca aparece num caminho construído a partir de `P'`
+    have hnotA : ∀ (Q : G.Walk b c), (∀ y ∈ Q.support, y ∈ P'.support ∨
+        (y ∉ C ∧ ∃ a b, s(a, b) ∈ P'.edges ∧ G.Adj a y ∧ G.Adj b y)) → a ∉ Q.support := by
+      intro Q hQ ha
+      rcases hQ a ha with h1 | ⟨h1, _⟩
+      · exact hP.2 h1
+      · exact h1 haC
+    cases j with
+    | zero =>
+      obtain ⟨Q, hQ, hQl, hQs⟩ := ih hP.1 hC' hE' hI' 0 (Nat.zero_le _)
+      refine ⟨Walk.cons h Q, ?_, by simp [hQl], ?_⟩
+      · rw [Walk.cons_isPath_iff]
+        exact ⟨hQ, hnotA Q hQs⟩
+      · intro y hy
+        rw [Walk.support_cons, List.mem_cons] at hy
+        rcases hy with rfl | hy
+        · exact Or.inl (by simp)
+        · rcases hQs y hy with h1 | ⟨h1, a', b', he, h2, h3⟩
+          · exact Or.inl (by simp [h1])
+          · exact Or.inr ⟨h1, a', b', by simp [he], h2, h3⟩
+    | succ j =>
+      have hj' : j ≤ P'.length := by simp at hj; omega
+      obtain ⟨Q, hQ, hQl, hQs⟩ := ih hP.1 hC' hE' hI' j hj'
+      obtain ⟨w, hwC, haw, hbw⟩ := hI a b (by simp)
+      have hwQ : w ∉ Q.support := by
+        intro hw
+        rcases hQs w hw with h1 | ⟨_, a', b', he, h2, h3⟩
+        · exact hwC (hC' w h1)
+        · have heq := hII w hwC a b a' b' habE (hE' _ he) haw hbw h2 h3
+          rw [← heq] at he
+          exact hP.2 (Walk.fst_mem_support_of_mem_edges P' he)
+      have haw' : a ≠ w := fun e => hwC (e ▸ haC)
+      refine ⟨Walk.cons haw (Walk.cons hbw.symm Q), ?_, by simp [hQl]; omega, ?_⟩
+      · rw [Walk.cons_isPath_iff, Walk.cons_isPath_iff]
+        refine ⟨⟨hQ, hwQ⟩, ?_⟩
+        rw [Walk.support_cons, List.mem_cons]
+        rintro (e | e)
+        · exact haw' e
+        · exact hnotA Q hQs e
+      · intro y hy
+        rw [Walk.support_cons, List.mem_cons, Walk.support_cons, List.mem_cons] at hy
+        rcases hy with rfl | rfl | hy
+        · exact Or.inl (by simp)
+        · exact Or.inr ⟨hwC, a, b, by simp, haw, hbw⟩
+        · rcases hQs y hy with h1 | ⟨h1, a', b', he, h2, h3⟩
+          · exact Or.inl (by simp [h1])
+          · exact Or.inr ⟨h1, a', b', by simp [he], h2, h3⟩
+
 /-- Teorema 7: Em qualquer grafo livre de C_{2^k}, `G_Δ` não possui ciclos de comprimento ≥ 4. -/
 theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
     (G : SimpleGraph V) (hfree : ¬ HasPow2Cycle G) :
