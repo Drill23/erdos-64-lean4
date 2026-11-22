@@ -779,7 +779,129 @@ theorem cycle_no_triangle_of_edges {V : Type*} [DecidableEq V] {H : SimpleGraph 
 theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
     (G : SimpleGraph V) (hfree : ¬ HasPow2Cycle G) :
     ∀ (v : V) (p : (triangleSubgraph G).Walk v v), p.IsCycle → p.length = 3 := by
-  sorry
+  classical
+  suffices hmain : ∀ N : ℕ, ∀ (x : V) (c : (triangleSubgraph G).Walk x x),
+      c.IsCycle → c.length = N → N = 3 by
+    intro v p hp
+    exact hmain _ v p hp rfl
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N ih =>
+  intro x c hc hlen
+  have h3 := hc.three_le_length
+  by_contra hne
+  have hle := triangleSubgraph_le G
+  let cG := c.mapLe hle
+  have hcG : cG.IsCycle := (Walk.isCycle_mapLe hle).mpr hc
+  have hcGlen : cG.length = N := by simp [cG, Walk.length_mapLe, hlen]
+  by_cases h4 : N = 4
+  · exact hfree (hasPow2Cycle_of_cycle_four cG hcG (by omega))
+  have h5 : 5 ≤ N := by omega
+  have hforb : ∀ (z : V) (q : (triangleSubgraph G).Walk z z), q.IsCycle → 4 ≤ q.length →
+      q.length < N → False := by
+    intro z q hq h4' hl
+    have := ih q.length hl z q hq rfl
+    omega
+  -- adjacências no subgrafo de triângulos
+  have hΔ1 : ∀ a b w, s(a, b) ∈ c.edges → G.Adj a w → G.Adj b w →
+      (triangleSubgraph G).Adj a w := by
+    intro a b w hab haw hbw
+    exact ⟨haw, b, (c.adj_of_mem_edges hab).1, hbw.symm⟩
+  have hΔ2 : ∀ a b w, s(a, b) ∈ c.edges → G.Adj a w → G.Adj b w →
+      (triangleSubgraph G).Adj b w := by
+    intro a b w hab haw hbw
+    exact ⟨hbw, a, (c.adj_of_mem_edges hab).1.symm, haw.symm⟩
+  have hN4 : 4 ≤ c.length := by omega
+  -- um vértice fora do ciclo adjacente às pontas de uma aresta não toca outro vértice do ciclo
+  have hkey : ∀ w, w ∉ c.support → ∀ a b z, s(a, b) ∈ c.edges → G.Adj a w → G.Adj b w →
+      z ∈ c.support → (triangleSubgraph G).Adj z w → z ≠ a → z ≠ b → False := by
+    intro w hw a b z hab haw hbw hz hzw hza hzb
+    have ha : a ∈ c.support := Walk.fst_mem_support_of_mem_edges c hab
+    have hb : b ∈ c.support := Walk.snd_mem_support_of_mem_edges c hab
+    have hza' : s(z, a) ∈ c.edges := by
+      by_contra hn
+      exact cycle_no_apex c hc hlen h5 hforb hw ha hz hza hzw (hΔ1 a b w hab haw hbw).symm hn
+    have hzb' : s(z, b) ∈ c.edges := by
+      by_contra hn
+      exact cycle_no_apex c hc hlen h5 hforb hw hb hz hzb hzw (hΔ2 a b w hab haw hbw).symm hn
+    exact cycle_no_triangle_of_edges c hc hN4 ha (Ne.symm hzb) hab
+      (by rw [Sym2.eq_swap]; exact hza') (by rw [Sym2.eq_swap]; exact hzb')
+  have hII : ∀ w, w ∉ {y | y ∈ c.support} → ∀ a b a' b',
+      s(a, b) ∈ {e | e ∈ c.edges} → s(a', b') ∈ {e | e ∈ c.edges} →
+      G.Adj a w → G.Adj b w → G.Adj a' w → G.Adj b' w → s(a, b) = s(a', b') := by
+    intro w hw a b a' b' hab hab' haw hbw ha'w hb'w
+    simp only [Set.mem_setOf_eq] at hw hab hab'
+    have ha' : a' ∈ c.support := Walk.fst_mem_support_of_mem_edges c hab'
+    have hb' : b' ∈ c.support := Walk.snd_mem_support_of_mem_edges c hab'
+    have hne' : a' ≠ b' := (c.adj_of_mem_edges hab').1.ne
+    by_cases h1 : a' = a ∨ a' = b
+    · by_cases h2 : b' = a ∨ b' = b
+      · rcases h1 with rfl | rfl <;> rcases h2 with rfl | rfl
+        · exact absurd rfl hne'
+        · rfl
+        · exact Sym2.eq_swap
+        · exact absurd rfl hne'
+      · push_neg at h2
+        exact (hkey w hw a b b' hab haw hbw hb' (hΔ2 a' b' w hab' ha'w hb'w) h2.1 h2.2).elim
+    · push_neg at h1
+      exact (hkey w hw a b a' hab haw hbw ha' (hΔ1 a' b' w hab' ha'w hb'w) h1.1 h1.2).elim
+  -- o caminho `P` = ciclo sem a primeira aresta, em `G`
+  have hnil : ¬ cG.Nil := hcG.not_nil
+  let P := cG.tail
+  have hP : P.IsPath := hcG.isPath_tail
+  have hPlen : P.length + 1 = N := by
+    rw [← hcGlen]; exact Walk.length_tail_add_one hnil
+  have hPedges : ∀ e ∈ P.edges, e ∈ c.edges := by
+    intro e he
+    simp only [P, Walk.edges_tail] at he
+    have := List.mem_of_mem_tail he
+    simpa [cG, Walk.edges_mapLe_eq_edges] using this
+  have hPsupp : ∀ y ∈ P.support, y ∈ {y | y ∈ c.support} := by
+    intro y hy
+    simp only [P, Walk.tail, Walk.drop_support_eq_support_drop_min] at hy
+    have := List.mem_of_mem_drop hy
+    simpa [cG, Walk.support_mapLe_eq_support] using this
+  have hI : ∀ a b, s(a, b) ∈ P.edges → ∃ w, w ∉ {y | y ∈ c.support} ∧ G.Adj a w ∧ G.Adj b w := by
+    intro a b he
+    have hab := hPedges _ he
+    obtain ⟨_, w, haw, hbw⟩ := c.adj_of_mem_edges hab
+    refine ⟨w, ?_, haw, hbw⟩
+    intro hw
+    simp only [Set.mem_setOf_eq] at hw
+    have ha : a ∈ c.support := Walk.fst_mem_support_of_mem_edges c hab
+    have hb : b ∈ c.support := Walk.snd_mem_support_of_mem_edges c hab
+    have hwa : s(w, a) ∈ c.edges := by
+      by_contra hn
+      exact cycle_no_chord c hc hlen h5 hforb ha hw (G.ne_of_adj haw).symm
+        (hΔ1 a b w hab haw hbw).symm hn
+    have hwb : s(w, b) ∈ c.edges := by
+      by_contra hn
+      exact cycle_no_chord c hc hlen h5 hforb hb hw (G.ne_of_adj hbw).symm
+        (hΔ2 a b w hab haw hbw).symm hn
+    exact cycle_no_triangle_of_edges c hc hN4 ha (G.ne_of_adj hbw) hab
+      (by rw [Sym2.eq_swap]; exact hwa) (by rw [Sym2.eq_swap]; exact hwb)
+  -- escolha da potência de 2
+  have hN0 : N ≠ 0 := by omega
+  set m := Nat.log 2 N with hm
+  have hlo : 2 ^ m ≤ N := Nat.pow_log_le_self 2 hN0
+  have hhi : N < 2 ^ (m + 1) := Nat.lt_pow_succ_log_self (by norm_num) N
+  have hm1 : 2 ≤ m := by
+    by_contra hlt
+    have : m = 0 ∨ m = 1 := by omega
+    rcases this with h | h <;> rw [h] at hhi <;> norm_num at hhi <;> omega
+  by_cases hpow : 2 ^ m = N
+  · exact hfree ⟨x, cG, m, hm1, hcG, by omega⟩
+  · have hlt : 2 ^ m < N := lt_of_le_of_ne hlo hpow
+    have hpw : 2 ^ (m + 1) = 2 * 2 ^ m := by ring
+    obtain ⟨Q, hQ, hQlen, -⟩ := path_multi_detour {y | y ∈ c.support} {e | e ∈ c.edges} hII P hP
+      hPsupp hPedges hI (2 ^ (m + 1) - N) (by omega)
+    have hadj : G.Adj x cG.snd := cG.adj_snd hnil
+    refine hfree ⟨x, Walk.cons hadj Q, m + 1, by omega, ?_, ?_⟩
+    · rw [Walk.isCycle_iff_isPath_tail_and_le_length]
+      simp only [Walk.tail_cons, Walk.isPath_copy, Walk.length_cons]
+      exact ⟨hQ, by omega⟩
+    · simp only [Walk.length_cons]
+      omega
 
 /-! ### Rodada 4: Componentes de V_3 e Pisos de Cubicidade (Teoremas 8–10) -/
 
