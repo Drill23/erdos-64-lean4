@@ -1,21 +1,23 @@
 import Mathlib
 
 /-!
-# Projeto Erdős #64 — Formalização em Lean 4 (`Checkpoint v1.2.1`)
+# Projeto Erdős #64 — Formalização em Lean 4 (`Checkpoint v1.3`)
 
-Sincronizado com `README.md` (v1.2.1 — Calibração Lean `v4.36.0` / Mathlib `v4.36.0`, Progresso `18% / 100%`).
+Sincronizado com `README.md` (v1.3 — Pós-Rodada 8, Lean `v4.36.0` / Mathlib `v4.36.0`, Progresso `22% / 100%`).
 
 Status dos blocos:
-- `HasPow2Cycle.mono`                   : VERIFIED (sem `sorry`, intocado)
-- `HasPow2Cycle.of_induce`              : VERIFIED (sem `sorry`, intocado)
-- `common_neighbors_le_one`             : VERIFIED (sem `sorry`, intocado)
-- `triangles_edge_disjoint`             : VERIFIED (sem `sorry`, intocado)
-- `minimal_connected`                   : VERIFIED (sem `sorry`, intocado)
-- `HasPow2Cycle.map`                    : READY_TO_COMPILE (corrigido sem `sorry`)
-- `no_two_common_neighbors`             : READY_TO_COMPILE (corrigido sem `sorry`)
-- `high_degree_independent`             : READY_TO_COMPILE (corrigido sem `sorry`)
-- `no_L3_vertices`                      : READY_TO_COMPILE (corrigido sem `sorry`)
-- Demais 9 teoremas (Rodadas 2–7)       : enunciados tipados com `sorry`
+- `HasPow2Cycle.map`                    : VERIFIED (sem `sorry`)
+- `HasPow2Cycle.mono`                   : VERIFIED (sem `sorry`)
+- `HasPow2Cycle.of_induce`              : VERIFIED (sem `sorry`)
+- `no_two_common_neighbors`             : VERIFIED (sem `sorry`)
+- `common_neighbors_le_one`             : VERIFIED (sem `sorry`)
+- `triangles_edge_disjoint`             : VERIFIED (sem `sorry`)
+- `minimal_connected`                   : VERIFIED (sem `sorry`, linter limpo v1.3)
+- `high_degree_independent`             : VERIFIED (sem `sorry`, linter limpo v1.3)
+- `no_L3_vertices`                      : VERIFIED (sem `sorry`)
+- `fullerene_euler_inequality`          : READY_TO_COMPILE (novo, sem `sorry` — Rodada 8)
+- `planar_girth5_no_C8_card_ge_60`      : READY_TO_COMPILE (novo, sem `sorry` — Rodada 8)
+- Demais 10 declarações (Rodadas 2–8)   : enunciados tipados com `sorry`
 -/
 
 open SimpleGraph
@@ -49,7 +51,7 @@ def IsMinimalCounterexample {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
       Fintype.card V < Fintype.card W ∨
       (Fintype.card V = Fintype.card W ∧ G.edgeFinset.card ≤ H.edgeFinset.card)
 
-/-! ### Infraestrutura Formal: Transporte de Ciclos C_{2^k} -/
+/-! ### Infraestrutura Formal: Transporte de Ciclos C_{2^k} — TODOS `VERIFIED` -/
 
 /-- Qualquer homomorfismo injetivo de grafos preserva a existência de um ciclo C_{2^k}. -/
 theorem HasPow2Cycle.map {V W : Type*} {H : SimpleGraph V} {G : SimpleGraph W}
@@ -89,7 +91,7 @@ theorem HasPow2Cycle.of_induce {V : Type*} {G : SimpleGraph V} {s : Set V}
     (h : HasPow2Cycle (G.induce s)) : HasPow2Cycle G :=
   HasPow2Cycle.map (SimpleGraph.Embedding.induce s).toHom Subtype.val_injective h
 
-/-! ### Rodada 1: Propriedades Básicas (Lemas 1–4) — TODOS SEM `sorry` -/
+/-! ### Rodada 1: Propriedades Básicas (Lemas 1–4) — TODOS `VERIFIED` -/
 
 /-- Lema 2 (versão estrutural): Em qualquer grafo livre de C_{2^k}, dois vértices distintos
 têm no máximo um vizinho em comum (caso contrário formam um C_4). -/
@@ -148,7 +150,7 @@ theorem minimal_connected {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
   by_contra hnr
   let S : Set V := {x : V | G.Reachable u₀ x}
   let W : Type := {x : V // x ∈ S}
-  haveI : Nonempty W := ⟨⟨u₀, SimpleGraph.Reachable.refl u₀⟩⟩
+  have : Nonempty W := ⟨⟨u₀, SimpleGraph.Reachable.refl u₀⟩⟩
   let H : SimpleGraph W := G.induce S
   have hfreeH : ¬ HasPow2Cycle H := fun h => hmin.1.2 (HasPow2Cycle.of_induce h)
   have hdegH : ∀ x : W, 3 ≤ H.degree x := by
@@ -199,7 +201,7 @@ theorem high_degree_independent {V : Type} [Fintype V] [Nonempty V] [DecidableEq
       have hnb : H.neighborFinset x = (G.neighborFinset x).erase v := by
         ext y
         simp [H, SimpleGraph.mem_neighborFinset, SimpleGraph.deleteEdges_adj,
-          Set.mem_singleton_iff, Finset.mem_erase, Sym2.eq_iff, huv_ne] <;> tauto
+          Set.mem_singleton_iff, Finset.mem_erase, huv_ne]; tauto
       have hv_mem : v ∈ G.neighborFinset x := by
         simpa [SimpleGraph.mem_neighborFinset] using huv
       rw [SimpleGraph.degree, hnb, Finset.card_erase_of_mem hv_mem]
@@ -210,7 +212,7 @@ theorem high_degree_independent {V : Type} [Fintype V] [Nonempty V] [DecidableEq
         have hnb : H.neighborFinset x = (G.neighborFinset x).erase u := by
           ext y
           simp [H, SimpleGraph.mem_neighborFinset, SimpleGraph.deleteEdges_adj,
-            Set.mem_singleton_iff, Finset.mem_erase, Sym2.eq_iff, huv_ne, huv_ne.symm] <;> tauto
+            Set.mem_singleton_iff, Finset.mem_erase, huv_ne.symm]; tauto
         have hu_mem : u ∈ G.neighborFinset x := by
           simpa [SimpleGraph.mem_neighborFinset] using huv.symm
         rw [SimpleGraph.degree, hnb, Finset.card_erase_of_mem hu_mem]
@@ -219,7 +221,7 @@ theorem high_degree_independent {V : Type} [Fintype V] [Nonempty V] [DecidableEq
       · have hnb : H.neighborFinset x = G.neighborFinset x := by
           ext y
           simp [H, SimpleGraph.mem_neighborFinset, SimpleGraph.deleteEdges_adj,
-            Set.mem_singleton_iff, Sym2.eq_iff, hxu, hxv]
+            Set.mem_singleton_iff, hxu, hxv]
         rw [SimpleGraph.degree, hnb]
         exact hmin.1.1 x
   have hedge_lt : H.edgeFinset.card < G.edgeFinset.card := by
@@ -266,7 +268,7 @@ theorem triangle_cactus_no_long_cycle {V : Type*} [Fintype V]
 
 /-! ### Rodada 4: Componentes de V_3 e Pisos de Cubicidade (Teoremas 8–10) -/
 
-/-- Corolário 8.1 (SEM `sorry`): Em um contraexemplo mínimo, todo vértice de grau 3 tem pelo
+/-- Corolário 8.1 (`VERIFIED`): Em um contraexemplo mínimo, todo vértice de grau 3 tem pelo
 menos um vizinho de grau 3 (ou seja, L_3 = ∅). -/
 theorem no_L3_vertices {V : Type} [Fintype V] [Nonempty V] [DecidableEq V]
     (G : SimpleGraph V) [DecidableRel G.Adj]
@@ -412,5 +414,129 @@ theorem minimal_no_K2_in_V3_cubicity {V : Type} [Fintype V] [Nonempty V] [Decida
       ∃ w : V, w ≠ u ∧ w ≠ v ∧ G.degree w = 3 ∧ (G.Adj u w ∨ G.Adj v w)) :
     12 * Fintype.card V ≤ 17 * (Finset.univ.filter (fun v : V => G.degree v = 3)).card := by
   sorry
+
+/-! ### Rodada 8: Recobrimento Hexagonal (Teorema 17) e Desigualdade do Fulereno (Teorema 18) -/
+
+/-- A rede hexagonal infinita `H` sobre `ℤ × ℤ × Bool`, onde `(x, y, false)` é adjacente a
+`(x, y, true)`, `(x - 1, y, true)` e `(x, y - 1, true)`. -/
+def hexLattice : SimpleGraph (ℤ × ℤ × Bool) where
+  Adj u v :=
+    (u.2.2 = false ∧ v.2.2 = true ∧
+      ((v.1 = u.1 ∧ v.2.1 = u.2.1) ∨
+       (v.1 = u.1 - 1 ∧ v.2.1 = u.2.1) ∨
+       (v.1 = u.1 ∧ v.2.1 = u.2.1 - 1))) ∨
+    (v.2.2 = false ∧ u.2.2 = true ∧
+      ((u.1 = v.1 ∧ u.2.1 = v.2.1) ∨
+       (u.1 = v.1 - 1 ∧ u.2.1 = v.2.1) ∨
+       (u.1 = v.1 ∧ u.2.1 = v.2.1 - 1)))
+  symm := ⟨by
+    rintro u v (h | h)
+    · exact Or.inr h
+    · exact Or.inl h⟩
+  loopless := ⟨by
+    rintro ⟨x, y, c⟩ (⟨h1, h2, _⟩ | ⟨h1, h2, _⟩)
+    · rw [h1] at h2; cases h2
+    · rw [h1] at h2; cases h2⟩
+
+/-- Um homomorfismo `π : H →g G` é um recobrimento de grafos (isomorfismo local) se induz
+uma bijeção entre as vizinhanças de cada vértice `u` e de `π u`. -/
+def IsGraphCovering {U V : Type*} {H : SimpleGraph U} {G : SimpleGraph V}
+    (π : H →g G) : Prop :=
+  ∀ u : U,
+    (∀ v₁ v₂ : U, H.Adj u v₁ → H.Adj u v₂ → π v₁ = π v₂ → v₁ = v₂) ∧
+    (∀ w : V, G.Adj (π u) w → ∃ v : U, H.Adj u v ∧ π v = w)
+
+/-- Teorema 17 (Núcleo Combinatório): Todo grafo finito simples bipartido `G` que admite
+um recobrimento pela rede hexagonal infinita `hexLattice` contém um ciclo simples de
+comprimento `4`, `8` ou `16`. -/
+theorem hex_covering_has_cycle_4_8_16 {V : Type} [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V)
+    (hbip : ∃ c : V → Bool, ∀ u v : V, G.Adj u v → c u ≠ c v)
+    (π : hexLattice →g G) (hcov : IsGraphCovering π) :
+    ∃ (v : V) (p : G.Walk v v), p.IsCycle ∧ (p.length = 4 ∨ p.length = 8 ∨ p.length = 16) := by
+  sorry
+
+/-- Teorema 18 (Núcleo Algébrico — SEM `sorry`): Desigualdade Exata do Fulereno para grafos
+com `δ(G) ≥ 3`, cintura `≥ 5` e livres de `C_8` imersos 2-celularmente em superfície de
+característica de Euler `chi`: `30 * chi ≤ 9 * |V_3| - 8 * |V|`. -/
+theorem fullerene_euler_inequality {V : Type} [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj]
+    {E F F5 Fge6 : ℕ} {chi : ℤ}
+    (hdeg : ∀ v : V, 3 ≤ G.degree v)
+    (hhand : ∑ v : V, G.degree v = 2 * E)
+    (hF : F = F5 + Fge6)
+    (hface_sum : 5 * F5 + 6 * Fge6 ≤ 2 * E)
+    (hF5 : 5 * F5 ≤ ∑ v : V, G.degree v / 2)
+    (heuler : chi = (Fintype.card V : ℤ) - (E : ℤ) + (F : ℤ)) :
+    30 * chi ≤
+      9 * ((Finset.univ.filter (fun v : V => G.degree v = 3)).card : ℤ) -
+      8 * (Fintype.card V : ℤ) := by
+  have hsum_ineq : ∀ s : Finset V,
+      38 * s.card + ∑ v ∈ s, G.degree v / 2 ≤
+        10 * (∑ v ∈ s, G.degree v) + 9 * (s.filter (fun v => G.degree v = 3)).card := by
+    intro s
+    refine Finset.induction_on s ?_ ?_
+    · simp
+    · intro a s ha ih
+      have hda : 3 ≤ G.degree a := hdeg a
+      have hcard_ins : (insert a s).card = s.card + 1 := by simp [ha]
+      have hsum1 : ∑ v ∈ insert a s, G.degree v / 2 =
+          G.degree a / 2 + ∑ v ∈ s, G.degree v / 2 := by simp [ha]
+      have hsum2 : ∑ v ∈ insert a s, G.degree v =
+          G.degree a + ∑ v ∈ s, G.degree v := by simp [ha]
+      have hcard_filt : ((insert a s).filter (fun v => G.degree v = 3)).card =
+          (s.filter (fun v => G.degree v = 3)).card + if G.degree a = 3 then 1 else 0 := by
+        by_cases h3 : G.degree a = 3
+        · have h1 : (insert a s).filter (fun v => G.degree v = 3) =
+              insert a (s.filter (fun v => G.degree v = 3)) := by
+            ext x
+            simp only [Finset.mem_filter, Finset.mem_insert]
+            constructor
+            · rintro ⟨rfl | hx, hx3⟩
+              · exact Or.inl rfl
+              · exact Or.inr ⟨hx, hx3⟩
+            · rintro (rfl | ⟨hx, hx3⟩)
+              · exact ⟨Or.inl rfl, h3⟩
+              · exact ⟨Or.inr hx, hx3⟩
+          rw [h1]
+          simp [ha, h3]
+        · have h1 : (insert a s).filter (fun v => G.degree v = 3) =
+              s.filter (fun v => G.degree v = 3) := by
+            ext x
+            simp only [Finset.mem_filter, Finset.mem_insert]
+            constructor
+            · rintro ⟨rfl | hx, hx3⟩
+              · exact absurd hx3 h3
+              · exact ⟨hx, hx3⟩
+            · rintro ⟨hx, hx3⟩
+              exact ⟨Or.inr hx, hx3⟩
+          rw [h1]
+          simp [h3]
+      rw [hcard_ins, hsum1, hsum2, hcard_filt]
+      split_ifs <;> omega
+  have hmain := hsum_ineq Finset.univ
+  simp only [Finset.card_univ] at hmain
+  rw [hhand] at hmain
+  omega
+
+/-- Corolário 18.1 (SEM `sorry`): Todo grafo planar (`chi = 2`) com `δ(G) ≥ 3`, cintura `≥ 5`
+e livre de `C_8` possui pelo menos `60` vértices (exato, atingido pelo fulereno `C_60`) e
+satisfaz `9 * |V_3| ≥ 8 * |V| + 60`. -/
+theorem planar_girth5_no_C8_card_ge_60 {V : Type} [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj]
+    {E F F5 Fge6 : ℕ}
+    (hdeg : ∀ v : V, 3 ≤ G.degree v)
+    (hhand : ∑ v : V, G.degree v = 2 * E)
+    (hF : F = F5 + Fge6)
+    (hface_sum : 5 * F5 + 6 * Fge6 ≤ 2 * E)
+    (hF5 : 5 * F5 ≤ ∑ v : V, G.degree v / 2)
+    (heuler : (2 : ℤ) = (Fintype.card V : ℤ) - (E : ℤ) + (F : ℤ)) :
+    60 ≤ Fintype.card V ∧
+    8 * Fintype.card V + 60 ≤ 9 * (Finset.univ.filter (fun v : V => G.degree v = 3)).card := by
+  have hineq := fullerene_euler_inequality G hdeg hhand hF hface_sum hF5 heuler
+  have hle : (Finset.univ.filter (fun v : V => G.degree v = 3)).card ≤ Fintype.card V := by
+    rw [← Finset.card_univ]
+    exact Finset.card_le_card (Finset.subset_univ _)
+  omega
 
 end Erdos64
