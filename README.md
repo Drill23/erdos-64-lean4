@@ -1,49 +1,68 @@
-> **INSTRUÇÃO AUTOMÁTICA DE RETOMADA PARA A IA (LEIA PRIMEIRO):**  
-> Se o usuário enviou este arquivo (ou link) em uma nova conversa — mesmo acompanhado apenas de um comando curto como *"segue"* ou *"continua"* — **assuma imediatamente a continuidade da pesquisa abaixo sem pedir confirmação**.  
-> 1. Considere todos os resultados da **Seção 3** como provados matematicamente (ver status real de compilação formal na tabela da Seção 3 e na Seção 5).  
-> 2. Se o usuário colou logs/erros do compilador Lean 4, priorize corrigir e validar os teoremas em `lean/Erdos64.lean` antes ou em conjunto com a nova rodada teórica.  
-> 3. **Ambiente Lean confirmado:** escreva **sempre** para **Lean 4 `v4.36.0` + Mathlib `v4.36.0`** respeitando rigorosamente as regras de compatibilidade da **Seção 5** (nunca chute nomes de lemas; prefira `simp`, `simpa`, `omega`, `aesop` ou `grind`).  
-> 4. Respeite os **Becos Sem Saída** da **Seção 4** para não repetir caminhos descartados.  
-> 5. Escolha **autonomamente** o ataque e execute diretamente a **Próxima Rodada** definida na **Seção 6** (neste checkpoint: **Rodada 9**), abrindo sua resposta com o indicador `**Progresso: X% / 100%**`.  
-> 6. Sempre que gerar um novo checkpoint, atualize **simultaneamente** `README.md` e `Erdos64_lean.md` (envelope para `lean/Erdos64.lean` — Regra do Par Sincronizado).
+> **INSTRUÇÃO AUTOMÁTICA DE RETOMADA PARA A IA (LEIA PRIMEIRO):**
+> Se o usuário enviou este arquivo (ou link) em uma nova conversa — mesmo acompanhado apenas de um comando curto como
+*"segue"* ou *"continua"* — **assuma imediatamente a continuidade da pesquisa abaixo sem pedir confirmação**.
+> 1. Considere todos os resultados da **Seção 3** como provados matematicamente (ver status real de compilação formal
+na tabela da Seção 3 e na Seção 5).
+> 2. Se o usuário colou logs/erros do compilador Lean 4, priorize corrigir e validar os teoremas em
+`lean/Erdos64.lean` antes ou em conjunto com a nova rodada teórica.
+> 3. **Ambiente Lean confirmado:** escreva **sempre** para **Lean 4 `v4.36.0` + Mathlib `v4.36.0`** respeitando
+rigorosamente as regras de compatibilidade da **Seção 5** (nunca chute nomes de lemas; prefira `simp`, `simpa`,
+`omega`, `aesop` ou `grind`).
+> 4. Respeite os **Becos Sem Saída** da **Seção 4** para não repetir caminhos descartados.
+> 5. Escolha **autonomamente** o ataque e execute diretamente a **Próxima Rodada** definida na **Seção 6** (neste checkpoint: **Rodada 10**), abrindo sua resposta com o indicador `**Progresso: X% / 100%**`.
+> 6. Sempre que gerar um novo checkpoint, atualize **simultaneamente** `README.md` e `Erdos64_lean.md` (envelope para
+`lean/Erdos64.lean` — Regra do Par Sincronizado).
 
 ---
 
 # Projeto Erdős #64 — Conjectura de Erdős–Gyárfás
 
-> **Arquivo Mestre de Estado, Memória e Continuidade (`Checkpoint v1.3`)**  
-> **Última atualização:** 22 de novembro de 2026 (Pós-Rodada 8 — Superfícies $\chi \ge 0$ & Limpeza de Linter)  
-> **Progresso Atual:** `22% / 100%`  
-> **Alvo Oficial:** `https://erdosproblems.com/64` (Prêmio de \$1.000 — Teoria dos Grafos / Ciclos)  
-> **Arquivo Lean Sincronizado:** `lean/Erdos64.lean` (entregue via envelope `Erdos64_lean.md`)  
-> **Contagem Formal Honesta (`lean/Erdos64.lean`):** **9 teoremas `VERIFIED`** (0 erros em Lean `v4.36.0`; 4 avisos de linter limpos na v1.3) | **2 novos teoremas `READY_TO_COMPILE`** (sem `sorry`, Rodada 8) | **10 declarações com `sorry`**
+> **Arquivo Mestre de Estado, Memória e Continuidade (`Checkpoint v1.4`)**  
+> **Última atualização:** 22 de novembro de 2026 (Pós-Rodada 9 — Cortes cúbicos de três arestas)  
+> **Progresso Atual:** `24% / 100%`  
+> **Alvo Oficial:** [Problema #64 de Erdős](https://erdosproblems.com/64) (Prêmio de \$1.000 — Teoria dos Grafos / Ciclos)  
+> **Arquivo Lean Sincronizado:** `lean/Erdos64.lean` (também no envelope `Erdos64_lean.md`)  
+> **Contagem Formal (`lean/Erdos64.lean`):** **16 teoremas públicos `VERIFIED`** | **9 declarações com `sorry`** | **0 erros e 0 avisos de linter** em Lean `v4.36.0` + Mathlib `v4.36.0`.
 
 ---
 
 ## 1. Protocolo de Continuidade e Regras do Projeto
 
 1. **Retomada Imediata Sem Regressão:**
-   - Todos os teoremas listados na **Seção 3** estão com demonstração matemática fechada; só revisite algum deles se o compilador Lean 4 apontar um erro ou durante a eliminação de seus `sorry` em `lean/Erdos64.lean`.
-   - Leia a **Seção 4** (Becos Sem Saída) e a **Seção 5** (Regras Lean `v4.36.0`) antes de propor qualquer ataque ou código novo.
-   - Retome sempre pela **Próxima Rodada** da **Seção 6** (neste checkpoint: **Rodada 9**).
+   - Todos os teoremas listados na **Seção 3** estão com demonstração matemática fechada; só revisite algum deles se o
+compilador Lean 4 apontar um erro ou durante a eliminação de seus `sorry` em `lean/Erdos64.lean`.
+   - Leia a **Seção 4** (Becos Sem Saída) e a **Seção 5** (Regras Lean `v4.36.0`) antes de propor qualquer ataque ou
+código novo.
+   - Retome sempre pela **Próxima Rodada** da **Seção 6** (neste checkpoint: **Rodada 10**).
 
 2. **Divisão de Papéis:**
-   - **IA (Estrategista e Demonstradora):** Decide **autonomamente** qual frente atacar em cada rodada, conduz as demonstrações com rigor completo, decide o momento de emitir novos checkpoints e mantém o código Lean 4 atualizado. Não pergunte ao usuário qual subproblema escolher.
-   - **Usuário (Orquestrador / Ponte de Verificação):** Controla o ritmo (*"segue"*), envia os arquivos `.md` ao seu agente com acesso ao GitHub e ao compilador **Lean 4 `v4.36.0` + Mathlib `v4.36.0`**, devolve relatórios/erros de compilação e mantém o repositório sincronizado.
+   - **IA (Estrategista e Demonstradora):** Decide **autonomamente** qual frente atacar em cada rodada, conduz as
+demonstrações com rigor completo, decide o momento de emitir novos checkpoints e mantém o código Lean 4 atualizado.
+Não pergunte ao usuário qual subproblema escolher.
+   - **Usuário (Orquestrador / Ponte de Verificação):** Controla o ritmo (*"segue"*), envia os arquivos `.md` ao seu
+agente com acesso ao GitHub e ao compilador **Lean 4 `v4.36.0` + Mathlib `v4.36.0`**, devolve relatórios/erros de
+compilação e mantém o repositório sincronizado.
 
 3. **Regra do Termômetro de Progresso (`0%` a `100%`):**
    - Toda rodada de pesquisa **deve começar** com `**Progresso: X% / 100%**` seguido de justificativa breve e honesta.
    - Escala:
      - `0%`: Mapeamento inicial, sem resultado estrutural próprio.
      - `1%` a `25%`: Reduções estruturais, eliminação de classes específicas e resultados parciais sólidos.
-     - `26%` a `60%`: Quebra de barreiras centrais no núcleo cúbico 3-conexo ou ferramenta geral aplicável a estruturas globais de ciclos.
-     - `61%` a `95%`: Arquitetura de prova global fechada com poucos lemas técnicos pendentes (ou candidato real a contraexemplo superando filtros profundos).
-     - `100%`: Prova completa fechada (ou contraexemplo explícito verificado), faltando apenas a verificação final sem `sorry` no Lean 4.
+     - `26%` a `60%`: Quebra de barreiras centrais no núcleo cúbico 3-conexo ou ferramenta geral aplicável a
+estruturas globais de ciclos.
+     - `61%` a `95%`: Arquitetura de prova global fechada com poucos lemas técnicos pendentes (ou candidato real a
+contraexemplo superando filtros profundos).
+     - `100%`: Prova completa fechada (ou contraexemplo explícito verificado), faltando apenas a verificação final sem
+`sorry` no Lean 4.
 
 4. **Regra do Par Sincronizado (`README.md` + `Erdos64_lean.md` $\to$ `lean/Erdos64.lean`):**
-   - **Sempre** que a IA gerar uma atualização de `README.md`, **deve gerar na mesma resposta** o arquivo `Erdos64_lean.md` contendo o código completo de `lean/Erdos64.lean` em bloco `lean` para extração automática pelo agente.
-   - Substituir sempre os mesmos arquivos no GitHub (`README.md` e `lean/Erdos64.lean`), sem criar arquivos `v2`, `v3`.
-   - Nunca substituir uma prova com erro por `sorry` para esconder erro de compilação; preservar sempre os teoremas já `VERIFIED`.
+   - **Sempre** que a IA gerar uma atualização de `README.md`, **deve gerar na mesma resposta** o arquivo
+`Erdos64_lean.md` contendo o código completo de `lean/Erdos64.lean` em bloco `lean` para extração automática pelo
+agente.
+   - Substituir sempre os mesmos arquivos no GitHub (`README.md` e `lean/Erdos64.lean`), sem criar arquivos `v2`,
+`v3`.
+   - Nunca substituir uma prova com erro por `sorry` para esconder erro de compilação; preservar sempre os teoremas já
+`VERIFIED`.
    - Usar exclusivamente LaTeX (`$...$` e `$$...$$`) para notação matemática fora dos blocos de código Lean.
 
 ---
@@ -51,140 +70,357 @@
 ## 2. Enunciado Oficial e Fronteira da Literatura (Nov/2026)
 
 ### Enunciado (Problema #64 — Erdős & Gyárfás, 1995)
-> Todo grafo finito simples $G$ com grau mínimo $\delta(G) \ge 3$ contém um ciclo simples de comprimento $2^k$ para algum inteiro $k \ge 2$ (ou seja, $4, 8, 16, 32, \dots$)?
+> Todo grafo finito simples $G$ com grau mínimo $\delta(G) \ge 3$ contém um ciclo simples de comprimento $2^k$ para
+algum inteiro $k \ge 2$ (ou seja, $4, 8, 16, 32, \dots$)?
 
 ### Fronteira Conhecida até Novembro de 2026
-* **Grau médio alto:** Liu e Montgomery (existe constante grande $C$ tal que todo grafo com grau médio $\ge C$ contém um ciclo $C_{2^k}$).
-* **Classes resolvidas conhecidas:** Grafos cúbicos planares 3-conexos (Heckman–Krakovski, 2013); grafos planares livres de garra (Daniel–Shauger); grafos $P_{13}$-livres (Hegde–Sandeep–Shashank, 2025, com busca computacional); grafos bipartidos planares (fórmula de Euler).
-* **Redução estrutural recente (2026):** Avery Carr (`arXiv:2605.22844`, mai/2026: $|V_3| \ge \frac{4}{7}n$) e Guillaume Ducoffe & Bogdan Dumitru (`arXiv:2609.28594`, jul–set/2026: 2-conexo ou 1-clique-soma de dois blocos 2-conexos, e $|V_3| > \frac{2}{3}n$).
+* **Grau médio alto:** Liu e Montgomery (existe constante grande $C$ tal que todo grafo com grau médio $\ge C$ contém
+um ciclo $C_{2^k}$).
+* **Classes resolvidas conhecidas:** Grafos cúbicos planares 3-conexos (Heckman–Krakovski, 2013); grafos planares
+livres de garra (Daniel–Shauger); grafos $P_{13}$-livres (Hegde–Sandeep–Shashank, 2025, com busca computacional);
+grafos bipartidos planares (fórmula de Euler).
+* **Redução estrutural recente (2026):** Avery Carr (`arXiv:2605.22844`, mai/2026: $|V_3| \ge \frac{4}{7}n$) e
+Guillaume Ducoffe & Bogdan Dumitru (`arXiv:2609.28594`, jul–set/2026: 2-conexo ou 1-clique-soma de dois blocos
+2-conexos, e $|V_3| > \frac{2}{3}n$).
 * **Limites computacionais certificados (2026 — Ducoffe–Dumitru, Balaji, Tranquilli):** Não existe contraexemplo com:
   * $n \le 40$ vértices (grafos gerais);
   * $n \le 48$ vértices (grafos cúbicos);
-  * $n \le 66$ vértices (grafos bipartidos; $n \ge 60$ também certificado para cúbicos bipartidos por Tranquilli, `arXiv:2608.02675`).
+  * $n \le 66$ vértices (grafos bipartidos; $n \ge 60$ também certificado para cúbicos bipartidos por Tranquilli,
+`arXiv:2608.02675`).
 
 ---
 
-## 3. Inventário de Resultados Provados (Rodadas 1 a 8)
+## 3. Inventário de Resultados Provados (Rodadas 1 a 9)
 
 ### Convenções Fixas
 * Um grafo $G$ é **livre de $C_{2^k}$** se não contém ciclo simples de comprimento $2^k$ com $k \ge 2$.
-* Um **contraexemplo mínimo** $G$ é um grafo finito simples, não vazio, com $\delta(G) \ge 3$ e livre de $C_{2^k}$, com **menor $|V(G)|$** possível e, no empate, **menor $|E(G)|$** possível.
-* Partição por graus: $H = V_{\ge 4}$ (tamanho $h$), $H_4 = V_4$, $L = V_3$ (tamanho $\ell$), e $L_j = \{v \in L : |N_G(v) \cap H| = j\}$ ($j \in \{0, 1, 2, 3\}$).
+* Um **contraexemplo mínimo** $G$ é um grafo finito simples, não vazio, com $\delta(G) \ge 3$ e livre de $C_{2^k}$,
+com **menor $|V(G)|$** possível e, no empate, **menor $|E(G)|$** possível.
+* Partição por graus: $H = V_{\ge 4}$ (tamanho $h$), $H_4 = V_4$, $L = V_3$ (tamanho $\ell$), e $L_j = \{v \in L :
+  \lvert N_G(v) \cap H\rvert = j\}$ ($j \in \{0, 1, 2, 3\}$).
 
 ### Tabela Mestre de Progresso e Sincronização com `lean/Erdos64.lean`
 
 | ID | Resultado | Rodada | Declaração em `lean/Erdos64.lean` | Status Lean 4 (`v4.36.0`) |
-| :--- | :--- | :---: | :--- | :---: |
-| **Infra 1** | Transporte de `HasPow2Cycle` por homomorfismo injetivo | 7 | `HasPow2Cycle.map` | **`VERIFIED`** |
-| **Infra 2** | Monotonicidade de `HasPow2Cycle` em subgrafos geradores | 7 | `HasPow2Cycle.mono` | **`VERIFIED`** |
-| **Infra 3** | Monotonicidade de `HasPow2Cycle` em subgrafos induzidos | 7 | `HasPow2Cycle.of_induce` | **`VERIFIED`** |
-| **Lema 1** | Contraexemplo mínimo é conexo | 1 | `minimal_connected` | **`VERIFIED`** *(linter limpo v1.3)* |
-| **Lema 2a** | Dois vértices distintos têm no máximo 1 vizinho comum (estrutural) | 1 | `no_two_common_neighbors` | **`VERIFIED`** |
-| **Lema 2b** | Dois vértices distintos têm no máximo 1 vizinho comum (cardinalidade) | 1 | `common_neighbors_le_one` | **`VERIFIED`** |
-| **Lema 3** | Triângulos nunca compartilham arestas | 1 | `triangles_edge_disjoint` | **`VERIFIED`** |
-| **Lema 4** | $H = V_{\ge 4}$ é um conjunto independente | 1 | `high_degree_independent` | **`VERIFIED`** *(linter limpo v1.3)* |
-| **Lema 5** | Contraexemplo mínimo não possui pontes | 2 | `minimal_bridgeless` | `SORRY` |
-| **Lema 6** | Dicotomia do vértice de corte e Redução ao Bloco Pinçado $\mathcal{K}$ | 2 | `pinched_block_equiv` | `PLANNED` |
-| **Teorema 7** | **Teorema do Cacto de Triângulos** ($G_\Delta$ sem ciclos $\ge 4$) | 3 | `triangle_cactus_no_long_cycle` | `SORRY` |
-| **Teoremas 8–9** | Fronteira das componentes de $G[L]$, $L_3 = \emptyset$, $\|E(G[L_2])\| \le \|H_4\|$ | 4 | `no_L3_vertices` | **`VERIFIED`** |
-| **Teorema 10** | Pisos de cubicidade: $\|V_3\| \ge \frac{8}{11}n$ (sem $K_3$) e $\ge \frac{20}{27}n$ (bipartido) | 4 | `minimal_triangle_free_cubicity`, `minimal_bipartite_cubicity` | `SORRY` |
-| **Teorema 11** | **Autorredução de $K_3$-fatores** em cúbicos ($H_3$ cúbico simples) | 5 | `minimal_no_K3_factor` | `SORRY` |
-| **Teorema 12** | **Autorredução de $C_5$-fatores** em cúbicos ($H_5$ 5-regular; $n \ge 110$) | 5 | `minimal_no_C5_factor` | `SORRY` |
-| **Teorema 13** | **3-Conectividade e Redução à Metade em Bipartidos** ($\|V(G')\| \le \lfloor (n+2)/2 \rfloor$) | 6 | `bipartite_not_3connected_halving` | `SORRY` |
-| **Teorema 14** | **Obstrução de Colagem Assimétrica** em cortes de 2 arestas | 6 | `two_edge_cut_asymmetric_gluing` | `PLANNED` |
-| **Teorema 15** | **Degeneração dos Triângulos $L_2$** ($G_S$ simples, livre de $C_{2^k}$, 2-degenerado) + $3\|V_3\| \ge 2n + 1$ + $\|V_3\| \ge \frac{12}{17}n$ ($S = \emptyset$) | 7 | `minimal_general_cubicity`, `minimal_no_K2_in_V3_cubicity` | `SORRY` |
-| **Prop. 16** | Rigidez de $C_7$-fatores sem $K_3$ ($\delta(H_7^{\text{simp}}) \ge 3$) + Lei Modular $p \mid (d+2)$ | 7 | *(classificação de fronteira)* | `N/A` |
-| **Teorema 17** | **Bipartidos em Superfícies $\chi \ge 0$:** todo bipartido com $\delta \ge 3$ no plano, $\mathbb{RP}^2$, toro ou garrafa de Klein contém $C_4$, $C_8$ ou $C_{16}$ (conjunto ótimo) | 8 | `hex_covering_has_cycle_4_8_16` | `SORRY` |
-| **Teorema 18** | **Desigualdade Exata do Fulereno ($C_{60}$):** cintura $\ge 5$ sem $C_8$ em superfície $\chi$ satisfaz $30\chi \le 9n_3 - 8n$; no plano $n \ge 60$ (exato) e $n_3 \ge \frac{8n+60}{9}$ | 8 | `fullerene_euler_inequality`, `planar_girth5_no_C8_card_ge_60` | `READY_TO_COMPILE` |
+| :--- | :--- | :---: | :--- | :--- |
+| **Infra 1** | Transporte de `HasPow2Cycle` por homomorfismo injetivo | 7 | `HasPow2Cycle.map` | `VERIFIED` |
+| **Infra 2** | Monotonicidade de `HasPow2Cycle` em subgrafos geradores | 7 | `HasPow2Cycle.mono` | `VERIFIED` |
+| **Infra 3** | Monotonicidade de `HasPow2Cycle` em subgrafos induzidos | 7 | `HasPow2Cycle.of_induce` | `VERIFIED` |
+| **Lema 1** | Contraexemplo mínimo é conexo | 1 | `minimal_connected` | `VERIFIED` |
+| **Lema 2a** | Dois vértices distintos têm no máximo um vizinho comum (estrutural) | 1 | `no_two_common_neighbors` | `VERIFIED` |
+| **Lema 2b** | Dois vértices distintos têm no máximo um vizinho comum (cardinalidade) | 1 | `common_neighbors_le_one` | `VERIFIED` |
+| **Lema 3** | Triângulos nunca compartilham arestas | 1 | `triangles_edge_disjoint` | `VERIFIED` |
+| **Lema 4** | $H=V_{\ge 4}$ é independente | 1 | `high_degree_independent` | `VERIFIED` |
+| **Lema 5** | Contraexemplo mínimo não possui pontes | 2, 9 | `minimal_bridgeless` | `VERIFIED` |
+| **Lema 6** | Dicotomia do vértice de corte e redução ao Bloco Pinçado $\mathcal{K}$ | 2 | `pinched_block_equiv` | `PLANNED` |
+| **Teorema 7** | Cacto de Triângulos ($G_\Delta$ sem ciclos de comprimento $\ge 4$) | 3 | `triangle_cactus_no_long_cycle` | `SORRY` |
+| **Teoremas 8–9** | Fronteira das componentes de $G[L]$, $L_3=\emptyset$, $\lvert E(G[L_2])\rvert\le\lvert H_4\rvert$ | 4 | `no_L3_vertices` | `VERIFIED` para $L_3=\emptyset$ |
+| **Teorema 10** | Pisos de cubicidade $\lvert V_3\rvert\ge \frac{8}{11}n$ (sem $K_3$) e $\lvert V_3\rvert\ge \frac{20}{27}n$ (bipartido) | 4 | `minimal_triangle_free_cubicity`, `minimal_bipartite_cubicity` | `SORRY` |
+| **Teorema 11** | Autorredução de $K_3$-fatores em cúbicos ($H_3$ cúbico simples) | 5 | `minimal_no_K3_factor` | `SORRY` |
+| **Teorema 12** | Autorredução de $C_5$-fatores em cúbicos ($H_5$ 5-regular; $n\ge 110$) | 5 | `minimal_no_C5_factor` | `SORRY` |
+| **Teorema 13** | 3-conectividade e redução à metade em bipartidos ($\lvert V(G')\rvert\le \lfloor(n+2)/2\rfloor$) | 6 | `bipartite_not_3connected_halving` | `SORRY` |
+| **Teorema 14** | Obstrução de colagem assimétrica em cortes de duas arestas | 6 | `two_edge_cut_asymmetric_gluing` | `PLANNED` |
+| **Teorema 15** | Degeneração dos Triângulos $L_2$ ($G_S$ simples, livre de $C_{2^k}$, 2-degenerado), $3\lvert V_3\rvert\ge 2n+1$ e $\lvert V_3\rvert\ge \frac{12}{17}n$ se $S=\emptyset$ | 7 | `minimal_general_cubicity`, `minimal_no_K2_in_V3_cubicity` | `SORRY` |
+| **Prop. 16** | Rigidez de $C_7$-fatores sem $K_3$ ($\delta(H_7^{\text{simp}})\ge 3$) e Lei Modular $p\mid(d+2)$ | 7 | Classificação de fronteira | `N/A` |
+| **Teorema 17** | Bipartidos de grau mínimo $\ge 3$ em superfícies com $\chi\ge 0$ contêm $C_4$, $C_8$ ou $C_{16}$ (conjunto ótimo) | 8 | `hex_covering_has_cycle_4_8_16`, `hex_has_cycle16_of_no_close_collision` | Raios $4$ e $\ge 8$ verificados. Raio $6$ com `sorry`. |
+| **Teorema 18** | Desigualdade exata do fulereno ($C_{60}$). Para cintura $\ge 5$ sem $C_8$, $30\chi\le 9n_3-8n$. No plano, $n\ge 60$ e $n_3\ge(8n+60)/9$ | 8 | `fullerene_euler_inequality`, `planar_girth5_no_C8_card_ge_60` | `VERIFIED` para o núcleo algébrico |
+| **Teorema 19** | Em um lado bipartido de ordem no máximo igual à do outro lado de um corte cúbico de três arestas, quaisquer dois pares de terminais admitem caminhos cujos comprimentos satisfazem $p+q+2=2^m$; ao menos um evita o terceiro terminal de sua cópia | 9 | `bipartite_three_terminals_same_color`, `even_closed_walk_same_color_edges`, `two_join_edges_dyadic_residues` | `VERIFIED` para os três lemas auxiliares. Colagem completa demonstrada em texto. |
 
-*(Legenda Lean 4: **`VERIFIED`** = compilado com 0 erros e sem `sorry` em Lean `v4.36.0` — **9 teoremas**; `READY_TO_COMPILE` = prova escrita sem `sorry`, aguardando compilação — **2 teoremas**; `SORRY` = enunciado tipado aguardando prova formal — **10 declarações**; `PLANNED` = pendente de transcrição.)*
+*Status Lean.* `VERIFIED` indica uma prova compilada sem dependência de `sorry`. `READY_TO_COMPILE` indica prova escrita aguardando compilação. `SORRY` indica enunciado tipado com prova pendente. `PLANNED` indica transcrição pendente.
 
 ---
 
 ### 3.1. Resumo das Rodadas 1 a 7 (Lemas 1–6, Teoremas 7–15 e Proposição 16)
 
-* **Rodada 1 (Lemas 1–4 — TODOS `VERIFIED`):** Todo contraexemplo mínimo $G$ é conexo, tem no máximo 1 vizinho comum entre vértices distintos, não tem triângulos compartilhando aresta e tem $H = V_{\ge 4}$ como conjunto independente.
-* **Rodada 2 (Lemas 5–6 e Bloco Pinçado):** $G$ não tem pontes. Se $G$ tem vértice de corte $v$, então $v$ é único, $\deg_G(v) = 4$, e $G$ é colagem de dois blocos 2-conexos $H_1, H_2$ de mesma ordem $k + 1$ e mesmo número de arestas. A conjectura equivale a $\mathcal{K} = \emptyset$ ($\mathcal{K}$ = grafos 2-conexos livres de $C_{2^k}$ com todos os graus $\ge 3$ exceto no máximo um vértice de grau $2$).
-* **Rodada 3 (Teorema 7 — Cacto de Triângulos):** Em qualquer grafo livre de $C_{2^k}$, o subgrafo $G_\Delta$ das arestas em triângulos não tem ciclo de comprimento $\ge 4$ (todo bloco de $G_\Delta$ é um $K_3$; $G_\Delta$ é 2-degenerado com $|E_\Delta| \le \frac{3}{2}(n-1)$; conjectura vale se $\delta(G_\Delta) \ge 3$).
-* **Rodada 4 (Teoremas 8–10):** Em qualquer contraexemplo mínimo (geral, sem triângulos ou bipartido) com $H \ne \emptyset$, toda componente conexa $C$ de $G[L]$ tem $x \in H$ com $|N_G(x) \cap V(C)| \ge \deg_G(x) - 2 \ge 2$ (Teorema 8), implicando $L_3 = \emptyset$ (`VERIFIED`), $c_2 \le c_0 + 2$, toda componente $K_2$ de $G[L]$ forma triângulo com único $x \in H_4$ e $|E(G[L_2])| \le |H_4|$ (Teorema 9). Pisos de cubicidade: $|V_3| \ge \frac{8}{11}n \approx 72{,}73\%$ (sem $K_3$) e $|V_3| \ge \frac{20}{27}n \approx 74{,}07\%$ (bipartido) (Teorema 10).
-* **Rodada 5 (Teoremas 11–12):** Nenhum contraexemplo mínimo é cúbico com $K_3$-fator ($H_3$ cúbico simples sobre $n/3$ vértices) nem com $C_5$-fator ($H_5$ 5-regular simples sobre $n/5$ vértices; $n \ge 110$ elementar, $n > 200$ com $n > 40$).
+* **Rodada 1 (Lemas 1–4 — TODOS `VERIFIED`):** Todo contraexemplo mínimo $G$ é conexo, tem no máximo 1 vizinho comum
+entre vértices distintos, não tem triângulos compartilhando aresta e tem $H = V_{\ge 4}$ como conjunto independente.
+* **Rodada 2 (Lemas 5–6 e Bloco Pinçado):** $G$ não tem pontes. Se $G$ tem vértice de corte $v$, então $v$ é único,
+$\deg_G(v) = 4$, e $G$ é colagem de dois blocos 2-conexos $H_1, H_2$ de mesma ordem $k + 1$ e mesmo número de arestas.
+A conjectura equivale a $\mathcal{K} = \emptyset$ ($\mathcal{K}$ = grafos 2-conexos livres de $C_{2^k}$ com todos os
+graus $\ge 3$ exceto no máximo um vértice de grau $2$).
+* **Rodada 3 (Teorema 7 — Cacto de Triângulos):** Em qualquer grafo livre de $C_{2^k}$, o subgrafo $G_\Delta$ das
+arestas em triângulos não tem ciclo de comprimento $\ge 4$ (todo bloco de $G_\Delta$ é um $K_3$; $G_\Delta$ é
+2-degenerado com $|E_\Delta| \le \frac{3}{2}(n-1)$; conjectura vale se $\delta(G_\Delta) \ge 3$).
+* **Rodada 4 (Teoremas 8–10):** Em qualquer contraexemplo mínimo (geral, sem triângulos ou bipartido) com $H \ne
+\emptyset$, toda componente conexa $C$ de $G[L]$ tem $x \in H$ com $|N_G(x) \cap V(C)| \ge \deg_G(x) - 2 \ge 2$
+(Teorema 8), implicando $L_3 = \emptyset$ (`VERIFIED`), $c_2 \le c_0 + 2$, toda componente $K_2$ de $G[L]$ forma
+triângulo com único $x \in H_4$ e $|E(G[L_2])| \le |H_4|$ (Teorema 9). Pisos de cubicidade: $|V_3| \ge \frac{8}{11}n
+\approx 72{,}73\%$ (sem $K_3$) e $|V_3| \ge \frac{20}{27}n \approx 74{,}07\%$ (bipartido) (Teorema 10).
+* **Rodada 5 (Teoremas 11–12):** Nenhum contraexemplo mínimo é cúbico com $K_3$-fator ($H_3$ cúbico simples sobre
+$n/3$ vértices) nem com $C_5$-fator ($H_5$ 5-regular simples sobre $n/5$ vértices; $n \ge 110$ elementar, $n > 200$
+com $n > 40$).
 * **Rodada 6 (Teoremas 13–14):**
-  * **Teorema 13:** Todo bipartido não-3-conexo com $\delta \ge 3$ e livre de $C_{2^k}$ gera um **menor próprio** simples $G'$ com $\delta(G') \ge 3$, livre de $C_{2^k}$ e $|V(G')| \le \lfloor (n+2)/2 \rfloor$ ($\le \lfloor (n+1)/2 \rfloor$ com vértice de corte; $\le \lfloor n/2 \rfloor$ com corte de 2 arestas). Consequências: todo contraexemplo mínimo bipartido em classe fechada por menores é **3-conexo**; combinado com $n > 40$, todo bipartido não-3-conexo com $n \le 79$ ($n \le 81$ com corte de 2 arestas) satisfaz a conjectura.
-  * **Teorema 14:** Em corte de 2 arestas não trivial $\{u_1 v_1, u_2 v_2\}$ de um contraexemplo mínimo geral (lados $A, B$ com $|V(A)| \le |V(B)|$), a colagem assimétrica força $\ell_1 + \ell_2 = 2^d - 1$ em $S(A)$ (logo $A$ nunca é bipartido), e se $u_1 u_2 \notin E(A), v_1 v_2 \notin E(B)$ então $P_A, P_B$ são não vazios e disjuntos.
+   * **Teorema 13:** Todo bipartido não-3-conexo com $\delta \ge 3$ e livre de $C_{2^k}$ gera um **menor próprio**
+simples $G'$ com $\delta(G') \ge 3$, livre de $C_{2^k}$ e $|V(G')| \le \lfloor (n+2)/2 \rfloor$ ($\le \lfloor (n+1)/2
+\rfloor$ com vértice de corte; $\le \lfloor n/2 \rfloor$ com corte de 2 arestas). Consequências: todo contraexemplo
+mínimo bipartido em classe fechada por menores é **3-conexo**; combinado com $n > 40$, todo bipartido não-3-conexo com
+$n \le 79$ ($n \le 81$ com corte de 2 arestas) satisfaz a conjectura.
+  * **Teorema 14:** Em corte de 2 arestas não trivial $\{u_1 v_1, u_2 v_2\}$ de um contraexemplo mínimo geral (lados
+$A, B$ com $|V(A)| \le |V(B)|$), a colagem assimétrica força $\ell_1 + \ell_2 = 2^d - 1$ em $S(A)$ (logo $A$ nunca é
+bipartido), e se $u_1 u_2 \notin E(A), v_1 v_2 \notin E(B)$ então $P_A, P_B$ são não vazios e disjuntos.
 * **Rodada 7 (Teorema 15 e Proposição 16):**
-  * **Teorema 15:** Contraindo os triângulos disjuntos $T_x = \{x, v_x, w_x\}$ ($x \in S \subseteq H_4$) das componentes $K_2$ de $G[L]$, o grafo $G_S$ é simples, $\Delta(G_S) \le 4$ ($\deg^+, \deg^- \le 2$), livre de $C_{2^k}$ ($2^k \mapsto 2^{k+1}$) e 2-degenerado. Consequências: $|S| < |H|$ se $H \ne \emptyset$, nova prova combinatória de $3|V_3| \ge 2n + 1$, e $|V_3| \ge \frac{12}{17}n \approx 70{,}59\%$ se $S = \emptyset$.
-  * **Proposição 16:** Em cúbicos sem $K_3$ com $C_7$-fator, $\delta(H_7^{\text{simp}}) \ge 3$; Lei Modular $p \mid (d+2)$ explica obstrução de levantamento para $d = 6$ ($\bmod 4$) e $d = 7$ ($\bmod 3$).
+    * **Teorema 15:** Contraindo os triângulos disjuntos $T_x = \{x, v_x, w_x\}$ ($x \in S \subseteq H_4$) das
+componentes $K_2$ de $G[L]$, o grafo $G_S$ é simples, $\Delta(G_S) \le 4$ ($\deg^+, \deg^- \le 2$), livre de $C_{2^k}$
+($2^k \mapsto 2^{k+1}$) e 2-degenerado. Consequências: $|S| < |H|$ se $H \ne \emptyset$, nova prova combinatória de
+$3|V_3| \ge 2n + 1$, e $|V_3| \ge \frac{12}{17}n \approx 70{,}59\%$ se $S = \emptyset$.
+  * **Proposição 16:** Em cúbicos sem $K_3$ com $C_7$-fator, $\delta(H_7^{\text{simp}}) \ge 3$; Lei Modular $p \mid
+(d+2)$ explica obstrução de levantamento para $d = 6$ ($\bmod 4$) e $d = 7$ ($\bmod 3$).
 
 ---
 
 ### 3.2. Rodada 8 — Bipartidos em Superfícies ($\chi \ge 0$) e Desigualdade Exata do Fulereno
 
 #### Teorema 17 (Resolução Completa de Bipartidos em Superfícies $\chi \ge 0$)
-> Todo grafo finito simples **bipartido** $G$ com $\delta(G) \ge 3$ imersível em uma superfície fechada $\Sigma$ com $\chi(\Sigma) \ge 0$ (plano/esfera, plano projetivo, toro ou garrafa de Klein) contém um ciclo simples de comprimento **$4$, $8$ ou $16$**. O conjunto $\{4, 8, 16\}$ é ótimo no toro e na garrafa de Klein (grade hexagonal toroidal $5 \times 5$ de 50 vértices tem ciclos $\le 16$ em $\{6, 10, 12, 14, 16\}$).
+> Todo grafo finito simples **bipartido** $G$ com $\delta(G) \ge 3$ imersível em uma superfície fechada $\Sigma$ com
+$\chi(\Sigma) \ge 0$ (plano/esfera, plano projetivo, toro ou garrafa de Klein) contém um ciclo simples de comprimento
+**$4$, $8$ ou $16$**. O conjunto $\{4, 8, 16\}$ é ótimo no toro e na garrafa de Klein (grade hexagonal toroidal $5
+\times 5$ de 50 vértices tem ciclos $\le 16$ em $\{6, 10, 12, 14, 16\}$).
 
 * **Esquema da prova fechada:**
-  1. Se $G_0$ (componente conexa) não contém $C_4$, redução a mergulho 2-celular com $\chi(\Sigma') \ge 0$ força $6F \le 2E$ e $3V \le 2E$. Se $\chi > 0$, contradição imediata (contém $C_4$). Se $\chi = 0$, igualdade exata: $G_0$ é cúbico com todas as faces 6-ciclos simples, induzindo recobrimento de grafos bipartido $\pi : H \to G_0$ a partir da rede hexagonal infinita $H$ ($\mathbb{Z}^2 \times \{0, 1\}$).
-  2. Seja $\rho(\pi) = \min\{d_H(x, y) : x \ne y,\, \pi(x) = \pi(y)\}$ (par, $\ge 4$ por injetividade local e bipartição):
+  1. Se $G_0$ (componente conexa) não contém $C_4$, redução a mergulho 2-celular com $\chi(\Sigma') \ge 0$ força $6F
+\le 2E$ e $3V \le 2E$. Se $\chi > 0$, contradição imediata (contém $C_4$). Se $\chi = 0$, igualdade exata: $G_0$ é
+cúbico com todas as faces 6-ciclos simples, induzindo recobrimento de grafos bipartido $\pi : H \to G_0$ a partir da
+rede hexagonal infinita $H$ ($\mathbb{Z}^2 \times \{0, 1\}$).
+   2. Seja $\rho(\pi) = \min\{d_H(x, y) : x \ne y,\, \pi(x) = \pi(y)\}$ (par, $\ge 4$ por injetividade local e
+bipartição):
      * $\rho(\pi) = 4 \implies$ caminho mínimo de comprimento 4 projeta em $C_4$ simples.
-     * $\rho(\pi) = 6 \implies$ **Lema do Desvio Hexagonal:** nas 2 órbitas à distância 6 (representantes $(3, 0, 0)$ e $(2, 1, 0)$), existem $\ge 4$ caminhos simples de comprimento 8 com pares de vizinhos extremos $(w_1, w_7)$ distintos; pelo Princípio da Casa dos Pombos ($4 > 3$), ao menos um evita a bijeção local $f : N_H(u) \xrightarrow{\sim} N_H(v)$ e projeta em $C_8$ simples.
-     * $\rho(\pi) \ge 8 \implies$ o trapézio de 5 hexágonos $\{(0,0),(1,0),(2,0),(0,1),(1,1)\}$ tem borda $C_{16}$ com diâmetro de mesma cor $\le 6 < 8 \le \rho(\pi)$, logo $\pi|_{V(C_{16})}$ é injetora e projeta em $C_{16}$ simples.
+     * $\rho(\pi) = 6 \implies$ **Lema do Desvio Hexagonal:** nas 2 órbitas à distância 6 (representantes $(3, 0, 0)$
+e $(2, 1, 0)$), existem $\ge 4$ caminhos simples de comprimento 8 com pares de vizinhos extremos $(w_1, w_7)$
+distintos; pelo Princípio da Casa dos Pombos ($4 > 3$), ao menos um evita a bijeção local $f : N_H(u)
+\xrightarrow{\sim} N_H(v)$ e projeta em $C_8$ simples.
+     * $\rho(\pi) \ge 8 \implies$ o trapézio de 5 hexágonos $\{(0,0),(1,0),(2,0),(0,1),(1,1)\}$ tem borda $C_{16}$ com
+diâmetro de mesma cor $\le 6 < 8 \le \rho(\pi)$, logo $\pi|_{V(C_{16})}$ é injetora e projeta em $C_{16}$ simples.
 
 #### Teorema 18 (Desigualdade Exata do Fulereno — Cintura $\ge 5$, Livre de $C_8$)
-> Para todo grafo finito simples $G$ com $\delta(G) \ge 3$, cintura $\ge 5$ e livre de $C_8$, imerso 2-celularmente em superfície fechada de característica $\chi$:
+> Para todo grafo finito simples $G$ com $\delta(G) \ge 3$, cintura $\ge 5$ e livre de $C_8$, imerso 2-celularmente em
+superfície fechada de característica $\chi$:
 > $$30\chi \le \sum_{d \ge 3} \left(30 - 10d + \left\lfloor \frac{d}{2} \right\rfloor\right) n_d \le 9n_3 - 8n.$$
 > Em particular:
-> * **Plano ($\chi = 2$):** **$n \ge 60$** (exato — atingido pelo fulereno $C_{60}$, cujos ciclos $\le 16$ são $\{5, 6, 9, \dots, 16\}$) e **$n_3 \ge \frac{8n + 60}{9} > 88{,}9\%$**.
+> * **Plano ($\chi = 2$):** **$n \ge 60$** (exato — atingido pelo fulereno $C_{60}$, cujos ciclos $\le 16$ são $\{5,
+6, 9, \dots, 16\}$) e **$n_3 \ge \frac{8n + 60}{9} > 88{,}9\%$**.
 > * **Plano Projetivo ($\chi = 1$):** $n \ge 30$ e $n_3 \ge \frac{8n + 30}{9}$.
 > * **Toro / Garrafa de Klein ($\chi = 0$):** $n_3 \ge \frac{8}{9}n \approx 88{,}89\%$.
 
-* **Esquema da prova fechada:** Nenhuma aresta separa duas 5-faces (caso contrário as duas 5-faces formariam um $C_8$ simples, já que qualquer coincidência extra cria $C_3$ ou $C_4$). Logo cada vértice de grau $d$ incide em no máximo $\lfloor d/2 \rfloor$ faces pentagonais ($5F_5 \le \sum \lfloor \deg(v)/2 \rfloor$). Combinando com $6F \le 2E + F_5$ em $30\chi = 30V - 30E + 30F$ segue a desigualdade exata (núcleo algébrico já formalizado sem `sorry` na v1.3).
+* **Esquema da prova fechada:** Nenhuma aresta separa duas 5-faces (caso contrário as duas 5-faces formariam um $C_8$
+simples, já que qualquer coincidência extra cria $C_3$ ou $C_4$). Logo cada vértice de grau $d$ incide em no máximo
+$\lfloor d/2 \rfloor$ faces pentagonais ($5F_5 \le \sum \lfloor \deg(v)/2 \rfloor$). Combinando com $6F \le 2E + F_5$
+em $30\chi = 30V - 30E + 30F$ segue a desigualdade exata (núcleo algébrico já formalizado sem `sorry` na v1.3).
+
+
+### 3.3. Rodada 9 — Espectros de caminhos em um lado bipartido de um corte cúbico
+
+#### Teorema 19 — Colagem de duas cópias com um terminal identificado
+
+Seja $G$ um contraexemplo mínimo **entre todos os grafos**, cúbico, e seja
+$V(G)=A\sqcup B$ uma partição cujo corte consiste nas três arestas $a_i b_i$,
+com $a_i\in A$ e $b_i\in B$ para $i\in\{1,2,3\}$. Suponha que
+as três arestas formem um emparelhamento, que $|A|\le |B|$ e que $G[A]$ seja
+bipartido. Para cada par de terminais $I\subset\{1,2,3\}$ de tamanho dois,
+escreva $P_I$ para o conjunto dos comprimentos de caminhos simples
+entre os terminais desse par e $P_I^\circ$ para o conjunto correspondente
+quando o caminho evita o terceiro terminal de $A$.
+
+Para **quaisquer** pares $I,J$, inclusive $I=J$, existem $p\in P_I$,
+$q\in P_J$ e um inteiro $m\ge 3$ tais que
+$$
+p+q+2=2^m,
+\qquad
+p\in P_I^\circ\ \text{ou}\ q\in P_J^\circ.
+$$
+Os resíduos de $p$ e $q$ módulo $4$ são $0$ e $2$, em alguma ordem.
+Em particular, cada um dos três pares admite caminhos de **ambos** os resíduos.
+Se nenhum dos pares $I,J$ admite caminho de comprimento $2$, então $m\ge 4$.
+
+**Demonstração.**
+
+1. **Cor dos terminais.** Os três terminais têm grau $2$ em $G[A]$ e todos
+   os demais vértices têm grau $3$. Se a bipartição é $X\sqcup Y$, com
+   $t_X$ e $t_Y$ terminais nas respectivas classes, contar as arestas por
+   cada classe dá $3|X|-t_X=3|Y|-t_Y$. Como $t_X+t_Y=3$, a diferença
+   $t_X-t_Y$ só pode ser $3$ ou $-3$. Portanto, os três terminais estão
+   na mesma cor e todos os caminhos entre eles têm comprimento par.
+2. **Grafo auxiliar.** Tome duas cópias de $G[A]$. Na primeira, escolha o
+   par $I$. Na segunda, escolha $J$. Identifique entre si os dois
+   terminais que ficaram fora dos pares, obtendo um vértice $r$. Acrescente
+   duas arestas de junção que liguem os terminais de $I$ aos de $J$ por
+   qualquer uma das duas bijeções. As cópias têm apenas $r$ em comum.
+   O grafo resultante é simples. O vértice $r$ tem grau $4$, os outros
+   quatro terminais passam a ter grau $3$, e os graus restantes continuam
+   $3$. Sua ordem é $2|A|-1<|V(G)|$, inclusive com $|A|=|B|$.
+   Pela minimalidade global, ele contém um ciclo simples de comprimento
+   $2^m$ para algum $m\ge 2$.
+3. **Uso das arestas de junção.** Alinhe as duas bipartições pela cor
+   comum de $r$. Toda aresta interna a uma cópia muda de cor. Cada
+   aresta de junção conserva a cor. Em um ciclo fechado o número de
+   mudanças de cor é par. Logo um ciclo de comprimento par usa zero
+   ou duas arestas de junção. Sem usá-las, um ciclo simples fica
+   inteiramente em uma cópia, pois mudar de cópia exigiria voltar a $r$
+   para fechar o ciclo. Isso contradiria a hipótese sobre $G$.
+4. **Leitura do ciclo.** As duas arestas de junção trocam de cópia.
+   Uma troca adicional em $r$ tornaria ímpar o número total de trocas
+   ao percorrer um ciclo fechado. Como o ciclo é simples, ele pode passar
+   por $r$ no máximo uma vez na ordem cíclica. Portanto, cada um dos
+   dois trechos entre as arestas de junção é um caminho simples em sua
+   própria cópia, e no máximo um deles contém $r$. Seus comprimentos
+   $p,q$ satisfazem a igualdade e a condição de desvio.
+   Como os terminais são distintos e têm a mesma cor, $p,q\ge 2$.
+   Assim, $2^m\ge 6$ e $m\ge 3$. Reduzindo a igualdade módulo $4$,
+   obtemos $p+q\equiv 2\pmod 4$. Se $p,q\ge 4$, então
+   $2^m\ge 10$, o que dá $m\ge 4$.
+
+**Consequências.**
+
+- As três condições com $I=J$ testam separadamente os três pares de
+  terminais. As outras três com $I\ne J$, consideradas sem ordem,
+  ligam seus espectros e também exigem que pelo menos um dos caminhos
+  testemunhas evite o terceiro terminal de sua cópia.
+- Em um grafo cúbico 3-conexo, qualquer corte de três arestas com
+  $|A|,|B|\ge 2$ é um emparelhamento. Um lado com dois vértices teria
+  pelo menos quatro arestas no corte. Se duas arestas de corte
+  compartilhassem um extremo de um lado com pelo menos três vértices,
+  remover os no máximo dois extremos desse lado separaria os seus
+  vértices restantes do lado oposto, contra a 3-conectividade.
+- Se $G$ é livre de $C_4$, então $|A|\ge 13$. Com os terminais em $X$,
+  a contagem do item 1 dá $|X|=|Y|+1$. Se $|X|=3$, os três
+  terminais têm os mesmos dois vizinhos, formando $C_4$. Portanto,
+  $X$ contém um vértice $x$ de grau $3$. Cada um de seus três vizinhos
+  em $Y$ tem dois outros vizinhos em $X$ e esses três pares são
+  disjuntos pela ausência de $C_4$. Logo $|X|\ge 7$ e
+  $|A|=2|X|-1\ge 13$.
+- Nos dois lados originais, a relação é de exclusão. Se $p$ e $q$
+  são comprimentos de caminhos entre os terminais do mesmo par de
+  índices, um em $A$ e o outro em $B$, então $p+q+2\ne 2^m$ para todo
+  $m\ge 2$. Os dois caminhos e as duas arestas de corte formariam
+  diretamente um ciclo simples caso houvesse igualdade.
+- Pelo Lema 2.1 de [Ducoffe–Dumitru](https://arxiv.org/abs/2609.28594),
+  cada aresta do corte pertence a um ciclo de comprimento $2^k+1$,
+  com $k\ge 2$. Um triângulo cruzando o corte exigiria duas arestas
+  de corte com extremo comum. Cada ciclo testemunha cruza exatamente
+  duas das três arestas e se decompõe em um caminho par em $A$ e um
+  caminho ímpar em $B$. Os pares com tal testemunha cobrem os três
+  terminais. Em particular, **pelo menos dois pares em $B$ têm caminho
+  ímpar**. A colagem do teorema fornece condições do lado $A$, enquanto
+  esse argumento fornece condições do lado oposto.
+
+**Escopo.** A construção usa minimalidade na classe geral, pois o grafo
+auxiliar pode ter ciclos ímpares e tem um vértice de grau $4$. A condição
+se aplica a um **lado** bipartido de um grafo que pode ter ciclos ímpares.
+De fato, o mesmo Lema 2.1 implica que um contraexemplo mínimo global
+jamais é bipartido. Isso deixa em aberto a existência de contraexemplos
+mínimos *dentro* da classe bipartida. Para a frente planar geral, permanece como referência o caso cúbico
+3-conexo de [Heckman–Krakovski](https://doi.org/10.37236/3252).
+
+**Extensão planar com terminais na borda.** O mesmo teste se aplica à
+minimalidade na classe dos grafos planares de cintura pelo menos $5$,
+desde que $G$ pertença a essa classe e $G[A]$ admita um desenho em disco
+com os três terminais na borda. Antes de identificar a raiz, disponha
+as duas cópias em discos e desenhe as três junções no anel entre suas
+bordas. Com três terminais, é possível alinhar qualquer bijeção por
+rotação da ordem cíclica e, se necessário, reflexão de um disco.
+Contraia a junção dos dois terminais que se tornam a raiz. Isso
+preserva a planaridade. Um ciclo simples que usa uma junção percorre
+um caminho entre terminais distintos em cada cópia e troca de cópia
+também na raiz. Seu comprimento é pelo menos $2+2+1=5$.
+Se usa duas junções, o mínimo é $2+2+2=6$. Ciclos sem junções ficam em
+uma cópia. Assim, o grafo auxiliar também tem cintura pelo menos $5$ e
+a contradição de minimalidade vale na classe indicada. O caso planar
+geral permanece aberto nesta rodada.
+
+**Formalização.** `bipartite_three_terminals_same_color` verifica o
+balanço de graus. `even_closed_walk_same_color_edges` verifica a
+paridade das junções, e `two_join_edges_dyadic_residues` verifica a
+conclusão módulo $4$. A colagem com duas arestas de junção e o levantamento dos
+caminhos são demonstrados acima em texto.
+
+#### Lema 5 — Prova formal por identificação de uma raiz
+
+Remova uma ponte e tome o menor dos dois lados. O subgrafo induzido
+retém todos os graus, exceto o do extremo da ponte, que conserva pelo
+menos dois vizinhos no lado. Duplique o lado e identifique os dois
+extremos correspondentes. O vértice identificado tem grau pelo menos
+quatro e todos os demais têm grau pelo menos três. Cada ciclo simples
+permanece em uma das cópias, portanto não há ciclo de comprimento
+diádico. A ordem do grafo é estritamente menor que a original,
+contrariando a minimalidade. Lean verifica essa prova em
+`minimal_bridgeless`.
+
+#### Teorema 17 — Dois casos do raio de colisão formalizados
+
+Para raio de colisão $4$, a projeção de um caminho mínimo fecha um
+ciclo simples de comprimento $4$. Lean usa a injetividade em
+distâncias menores para verificar que a cauda projetada é um caminho
+simples. Na ausência de colisões a distância até $7$, o teorema
+`hex_has_cycle16_of_no_close_collision` verifica a borda de $16$
+vértices. Uma busca finita em $19$ vértices do trapézio certifica que
+quaisquer dois vértices da borda se ligam por um passeio de comprimento
+no máximo $7$. A verificação finita usa `decide`.
+
+A declaração `hex_covering_has_cycle_4_8_16` escolhe a menor colisão
+quando existe uma a distância até $7$. A bipartição do destino exclui
+distâncias ímpares, e a injetividade local do recobrimento exclui
+distância $2$. O único ramo com `sorry` nessa declaração é o raio $6$.
 
 ---
 
 ## 4. Becos Sem Saída e Obstruções Mapeadas (Não Repetir)
 
-1. **Busca bruta computacional em grafos pequenos:** Descartada até $n \le 40$ (geral), $n \le 48$ (cúbico), $n \le 66$ (bipartido) e $n \le 79$ (bipartido não-3-conexo, pelo Corolário 13.2).
+1. **Busca bruta computacional em grafos pequenos:** Descartada até $n \le 40$ (geral), $n \le 48$ (cúbico), $n \le
+66$ (bipartido) e $n \le 79$ (bipartido não-3-conexo, pelo Corolário 13.2).
 2. **Grafos planares bipartidos:** Caso trivial por Euler (já englobado pelo Teorema 17 para todo $\chi \ge 0$).
-3. **Densidade pura de grafos 2-degenerados com $\Delta \le 4$ (como $G_S$ ou $M$):** Atingem $2m - O(1)$ arestas mesmo com cintura arbitrariamente alta.
-4. **Contração simples de todos os triângulos $G / \mathcal{T}$ em cúbicos:** Um $C_4$ contraído com $t = 1$ triângulo levanta apenas para $\{5, 6\}$.
-5. **Levantamento incondicional de $C_d$-fatores para $d \ge 6$:** Bloqueado pela Lei Modular (Proposição 16: $d=6 \bmod 4$, $d=7 \bmod 3$) e por cordas internas.
-6. **Contração de 2-fator misto $\{C_3, C_5\}$:** $C_4$ contraído com três $K_3$ e um $C_5$ ($\{2,3\}$) levanta apenas para $[9, 13]$.
+3. **Densidade pura de grafos 2-degenerados com $\Delta \le 4$ (como $G_S$ ou $M$):** Atingem $2m - O(1)$ arestas
+mesmo com cintura arbitrariamente alta.
+4. **Contração simples de todos os triângulos $G / \mathcal{T}$ em cúbicos:** Um $C_4$ contraído com $t = 1$ triângulo
+levanta apenas para $\{5, 6\}$.
+5. **Levantamento incondicional de $C_d$-fatores para $d \ge 6$:** Bloqueado pela Lei Modular (Proposição 16: $d=6
+\bmod 4$, $d=7 \bmod 3$) e por cordas internas.
+6. **Contração de 2-fator misto $\{C_3, C_5\}$:** $C_4$ contraído com três $K_3$ e um $C_5$ ($\{2,3\}$) levanta apenas
+para $[9, 13]$.
+
+7. **Colagem da Rodada 9 dentro da classe bipartida ou cúbica:** A construção pode gerar ciclos ímpares e tem um vértice de grau $4$. Sua aplicação exige minimalidade global, ou uma classe que contenha o grafo auxiliar.
 
 ---
 
 ## 5. Ambiente Lean 4 e Regras Obrigatórias (`v4.36.0`)
 
-* **Toolchain confirmado:** **Lean 4 `v4.36.0` + Mathlib `v4.36.0`** (novembro de 2026).
-* **Contagem honesta atual (`lean/Erdos64.lean` — v1.3):**
-  * **`VERIFIED` (9 teoremas — 0 erros em Lean `v4.36.0`):** `HasPow2Cycle.map`, `HasPow2Cycle.mono`, `HasPow2Cycle.of_induce`, `no_two_common_neighbors`, `common_neighbors_le_one`, `triangles_edge_disjoint`, `minimal_connected` *(linter limpo v1.3)*, `high_degree_independent` *(linter limpo v1.3)*, `no_L3_vertices`.
-  * **`READY_TO_COMPILE` (2 novos teoremas sem `sorry` — Rodada 8):** `fullerene_euler_inequality`, `planar_girth5_no_C8_card_ge_60`.
-  * **`SORRY` (10 declarações):** `minimal_bridgeless`, `triangle_cactus_no_long_cycle`, `minimal_triangle_free_cubicity`, `minimal_bipartite_cubicity`, `minimal_no_K3_factor`, `minimal_no_C5_factor`, `bipartite_not_3connected_halving`, `minimal_general_cubicity`, `minimal_no_K2_in_V3_cubicity`, `hex_covering_has_cycle_4_8_16`.
+* **Toolchain:** Lean 4 `v4.36.0` e Mathlib `v4.36.0`. Compilação de `lean/Erdos64.lean` com `lake env lean` executada localmente no checkout dessa versão de Mathlib.
+* **v1.3:** O relatório anexado lista 0 erros e 10 avisos de `sorry`, confirmando os 11 teoremas sem `sorry` da versão. Ao recuperar o código do PDF, a indentação no cálculo de cardinalidade em `fullerene_euler_inequality` causou erros. O passo foi reescrito com `Finset.filter_insert`, preservando os enunciados do Teorema 18.
+* **v1.4 — `VERIFIED` (16 teoremas públicos):** `HasPow2Cycle.map`, `HasPow2Cycle.mono`, `HasPow2Cycle.of_induce`, `no_two_common_neighbors`, `common_neighbors_le_one`, `triangles_edge_disjoint`, `minimal_connected`, `high_degree_independent`, `minimal_bridgeless`, `no_L3_vertices`, `fullerene_euler_inequality`, `planar_girth5_no_C8_card_ge_60`, `bipartite_three_terminals_same_color`, `even_closed_walk_same_color_edges`, `two_join_edges_dyadic_residues`, `hex_has_cycle16_of_no_close_collision`. Os lemas privados de infraestrutura ficam fora da contagem.
+* **v1.4 — `SORRY` (9 declarações):** `triangle_cactus_no_long_cycle`, `minimal_triangle_free_cubicity`, `minimal_bipartite_cubicity`, `minimal_no_K3_factor`, `minimal_no_C5_factor`, `bipartite_not_3connected_halving`, `minimal_general_cubicity`, `minimal_no_K2_in_V3_cubicity`, `hex_covering_has_cycle_4_8_16`.
 
 ### Regras de Compatibilidade Confirmadas para Lean `v4.36.0` / Mathlib `v4.36.0`
-1. **Não inventar nem chutar nomes de lemas** (em `v4.36.0`, convenções como `not_mem` viraram `notMem` camelCase; `Sym2.map_pair_eq`, `Finset.erase_eq_of_not_mem` e `SimpleGraph.mem_neighborFinset.mp/.mpr` **não existem**). Na dúvida, use `simp`, `simpa`, `omega`, `aesop`, `tauto` ou `grind`.
-2. **`Std.Symm` e `Std.Irrefl` são estruturas:** ao construir um `SimpleGraph`, use `⟨by ...⟩`; para irreflexividade de `G.Adj`, use `G.ne_of_adj hvv rfl`.
+1. **Não inventar nem chutar nomes de lemas** (em `v4.36.0`, convenções como `not_mem` viraram `notMem` camelCase;
+`Sym2.map_pair_eq`, `Finset.erase_eq_of_not_mem` e `SimpleGraph.mem_neighborFinset.mp/.mpr` **não existem**). Na
+dúvida, use `simp`, `simpa`, `omega`, `aesop`, `tauto` ou `grind`.
+2. **`Std.Symm` e `Std.Irrefl` são estruturas:** ao construir um `SimpleGraph`, use `⟨by ...⟩`; para irreflexividade
+de `G.Adj`, use `G.ne_of_adj hvv rfl`.
 3. **`push_neg` foi substituído por `push Not`.**
-4. **Linters ativos:** use `have` (nunca `haveI`) para proposições; evite argumentos redundantes no `simp`; use `;` em vez de `<;>` quando houver apenas 1 submeta.
-5. **Aritmética em `Fin d` genérico:** use `⟨(j.val + 1) % d, Nat.mod_lt _ (by have := j.isLt; omega)⟩` em vez de `j + 1`.
+4. **Linters ativos:** use `have` (nunca `haveI`) para proposições; evite argumentos redundantes no `simp`; use `;` em
+vez de `<;>` quando houver apenas 1 submeta.
+5. **Aritmética em `Fin d` genérico:** use `⟨(j.val + 1) % d, Nat.mod_lt _ (by have := j.isLt; omega)⟩` em vez de `j +
+1`.
 6. **`Sym2.map f s(a₁, a₂)`:** use `change s(f a₁, f a₂) = s(f b₁, f b₂) at hab` seguido de `rw [Sym2.eq_iff]`.
 7. **`SimpleGraph.deleteEdges`:** simplifique sempre com `SimpleGraph.deleteEdges_adj`.
 
 ---
 
-## 6. Plano Imediato para a Rodada 9
+## 6. Plano Imediato para a Rodada 10
 
-1. **Verificação da `v1.3` (meta: 11/11 blocos sem `sorry` + 0 avisos de linter):** Se o usuário trouxer o relatório da `v1.3`, corrigir eventual detalhe e confirmar `11 VERIFIED`.
-2. **Ataque Teórico Principal (Rodada 9) — Duas frentes de maior retorno:**
-   - **Frente A (Planares gerais de cintura $\ge 5$):** O Teorema 18 encurralou todo grafo planar de cintura $\ge 5$ sem $C_8$ para $n \ge 60$ e $> 88{,}9\%$ de vértices cúbicos (forçando "ilhas" de hexágonos em torno dos pentágonos isolados, como no fulereno $C_{60}$, que imediatamente gera $C_{16}$). Investigar via **método de descarga (*discharging*)** se todo planar de cintura $\ge 5$ (não necessariamente cúbico nem 3-conexo) contém $C_8$ ou $C_{16}$ (ou $C_{32}$).
-   - **Frente B (Núcleo Cúbico 3-Conexo Geral):** Atacar a álgebra de **cordas sobre ciclos longos / Hamiltonianos** e **cortes de 3 arestas não triviais** em grafos cúbicos 3-conexos (em especial bipartidos, degrau seguinte ao Teorema 13).
-3. **Formalização contínua em Lean 4:** Próximos alvos para eliminar `sorry`: `minimal_bridgeless` (Lema 5) e o núcleo combinatório do Teorema 17 (`hex_covering_has_cycle_4_8_16`).
+1. **Núcleo cúbico 3-conexo:** testar se as seis condições do Teorema 19, a restrição de desvio do terceiro terminal e as somas proibidas entre os lados originais impõem uma contradição para famílias definidas de fragmentos. Aplicar o mesmo esquema a lados com poucas obstruções de paridade e explicitar onde a ocorrência de caminhos ímpares bloqueia a leitura da colagem.
+2. **Formalização Lean:** aproveitar a prova de `minimal_bridgeless` para modelar duas cópias com um vértice compartilhado e duas arestas de junção. No Teorema 17, formalizar o desvio no único caso pendente, de raio de colisão $6$, com quatro caminhos de comprimento $8$ e pares distintos de vizinhos extremos.
+3. **Frente planar:** a desigualdade do Teorema 18 permanece como ponto de partida. Ao retomar a descarga de faces, explicitar as condições que garantem que a borda de uma configuração é um ciclo simples, especialmente quando o mergulho admite vértices de corte.
 
 ---
 
 ## 7. Changelog de Sessões
 
-* **v1.3 (22/11/2026 — Rodada 8 & Limpeza Lean `v4.36.0`):** Confirmados 9/9 blocos sem `sorry` com 0 erros; limpos os 4 avisos de linter; provados Teorema 17 (bipartidos em superfícies $\chi \ge 0$ contêm $C_4, C_8$ ou $C_{16}$, ótimo) e Teorema 18 (Desigualdade Exata do Fulereno $30\chi \le 9n_3 - 8n$, $n \ge 60$ no plano); formalizados sem `sorry` os 2 teoremas algébricos do Teorema 18 e definida `hexLattice` + enunciado do Teorema 17. Progresso: `22% / 100%`.
-* **v1.2.1 (22/11/2026 — Calibração Lean `v4.36.0`):** Corrigidos todos os 15 erros de compilação para Lean `v4.36.0` + Mathlib `v4.36.0`. Progresso: `18% / 100%`.
+* **v1.4 (22/11/2026 — Rodada 9):** Provado o Teorema 19 sobre as seis combinações de pares de terminais de um lado bipartido de corte cúbico. Formalizado `minimal_bridgeless` e verificados três lemas auxiliares do Teorema 19. Verificados os casos de raio de colisão $4$ e $\ge 8$ do Teorema 17. Recompilação completa com 0 erros, 0 avisos de linter e 9 avisos de `sorry`. Progresso: `24% / 100%`.
+* **v1.3 (22/11/2026 — Rodada 8 & Limpeza Lean `v4.36.0`):** Confirmados 9/9 blocos sem `sorry` com 0 erros; limpos os
+4 avisos de linter; provados Teorema 17 (bipartidos em superfícies $\chi \ge 0$ contêm $C_4, C_8$ ou $C_{16}$, ótimo)
+e Teorema 18 (Desigualdade Exata do Fulereno $30\chi \le 9n_3 - 8n$, $n \ge 60$ no plano); formalizados sem `sorry` os
+2 teoremas algébricos do Teorema 18 e definida `hexLattice` + enunciado do Teorema 17. Progresso: `22% / 100%`.
+* **v1.2.1 (22/11/2026 — Calibração Lean `v4.36.0`):** Corrigidos todos os 15 erros de compilação para Lean `v4.36.0`
++ Mathlib `v4.36.0`. Progresso: `18% / 100%`.
 * **v1.2 (21/11/2026 — Rodadas 6 e 7):** Teoremas 13, 14, 15 e Proposição 16. Progresso: `18% / 100%`.
-* **v1.1 (21/11/2026 — Sincronização):** Comando automático no topo, Regra do Par Sincronizado e extração de `Erdos64_lean.md`. Progresso: `11% / 100%`.
+* **v1.1 (21/11/2026 — Sincronização):** Comando automático no topo, Regra do Par Sincronizado e extração    de
+`Erdos64_lean.md`. Progresso: `11% / 100%`.
 * **v1.0 (21/11/2026 — Rodadas 1 a 5):** Lemas 1–6, Bloco Pinçado, Teoremas 7–12. Progresso: `11% / 100%`.
